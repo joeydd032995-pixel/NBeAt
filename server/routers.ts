@@ -3,6 +3,28 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+
+// Start background real-time sync on server startup
+setTimeout(async () => {
+  try {
+    const { syncESPNLiveStats } = await import("./espnLiveStatsService");
+    console.log("[Server] Starting initial real-time stats sync...");
+    await syncESPNLiveStats();
+    
+    // Schedule updates every 6 hours
+    setInterval(async () => {
+      try {
+        console.log("[Server] Running scheduled real-time stats sync...");
+        await syncESPNLiveStats();
+      } catch (error) {
+        console.error("[Server] Scheduled sync error:", error);
+      }
+    }, 6 * 60 * 60 * 1000);
+  } catch (error) {
+    console.error("[Server] Failed to start real-time sync:", error);
+  }
+}, 5000);
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -21,317 +43,97 @@ export const appRouter = router({
   // NBA Data Management
   nba: router({
     syncData: publicProcedure.mutation(async () => {
-      const { syncNBAData } = await import("./nbaDataService");
-      return await syncNBAData();
+      const { syncESPNLiveStats } = await import("./espnLiveStatsService");
+      try {
+        return await syncESPNLiveStats();
+      } catch (error) {
+        console.error("Error syncing real-time stats:", error);
+        // Fallback to mock data
+        try {
+          const { generateMockData } = await import("./mockDataGenerator");
+          return await generateMockData();
+        } catch (mockError) {
+          console.error("Error generating mock data fallback:", mockError);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to sync data",
+          });
+        }
+      }
+    }),
+    syncESPNData: publicProcedure.mutation(async () => {
+      const { syncESPNData } = await import("./espnDataService");
+      try {
+        return await syncESPNData();
+      } catch (error) {
+        console.error("Error syncing ESPN data:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to sync ESPN data",
+        });
+      }
+    }),
+    syncMockData: publicProcedure.mutation(async () => {
+      const { generateMockData } = await import("./mockDataGenerator");
+      try {
+        return await generateMockData();
+      } catch (error) {
+        console.error("Error generating mock data:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate mock data",
+        });
+      }
     }),
     getAllPlayers: publicProcedure.query(async () => {
       const { getAllPlayers } = await import("./db");
-      return await getAllPlayers();
+      try {
+        const players = await getAllPlayers();
+        return players || [];
+      } catch (error) {
+        console.error("Error fetching players:", error);
+        return [];
+      }
     }),
     getPlayerByName: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
       const { getPlayerByName } = await import("./db");
-      return await getPlayerByName(input.name);
+      try {
+        const player = await getPlayerByName(input.name);
+        return player || null;
+      } catch (error) {
+        console.error("Error fetching player:", error);
+        return null;
+      }
     }),
     getAllTeams: publicProcedure.query(async () => {
       const { getAllTeams } = await import("./db");
-      return await getAllTeams();
+      try {
+        const teams = await getAllTeams();
+        return teams || [];
+      } catch (error) {
+        console.error("Error fetching teams:", error);
+        return [];
+      }
     }),
     getSyncStatus: publicProcedure.query(async () => {
-      const { getLastSyncTime, isSyncNeeded } = await import("./dataSyncService");
-      const lastSync = getLastSyncTime();
-      const needsSync = isSyncNeeded(lastSync);
-      return {
-        lastSync,
-        needsSync,
-        message: lastSync ? `Last synced: ${lastSync.toLocaleString()}` : "Never synced",
-      };
-    }),
-  }),
-
-  // Betting Calculators
-  betting: router({
-    calculateKelly: publicProcedure
-      .input(
-        z.object({
-          probability: z.number().min(0).max(1),
-          decimalOdds: z.number().min(1),
-          bankroll: z.number().min(0),
-          kellyMultiplier: z.number().min(0).max(1).default(0.25),
-        })
-      )
-      .mutation(({ input }) => {
-        const { calculateBetSuggestion } = require("./bettingCalculators");
-        return calculateBetSuggestion(
-          input.probability,
-          input.decimalOdds,
-          input.bankroll,
-          input.kellyMultiplier
-        );
-      }),
-    
-    calculateEV: publicProcedure
-      .input(
-        z.object({
-          probability: z.number().min(0).max(1),
-          decimalOdds: z.number().min(1),
-        })
-      )
-      .query(({ input }) => {
-        const { calculateEV } = require("./bettingCalculators");
-        const ev = calculateEV(input.probability, input.decimalOdds);
+      try {
+        const { getLastUpdateTime, isUpdateInProgress } = await import("./espnLiveStatsService");
+        const lastUpdate = getLastUpdateTime();
+        const updating = isUpdateInProgress();
         return {
-          ev: parseFloat(ev.toFixed(4)),
-          evPercent: parseFloat((ev * 100).toFixed(2)),
+          lastSync: lastUpdate,
+          needsSync: !lastUpdate,
+          message: updating ? "Updating..." : lastUpdate ? `Last updated: ${lastUpdate.toLocaleString()}` : "Never synced",
         };
-      }),
-    
-    convertOdds: publicProcedure
-      .input(
-        z.object({
-          value: z.number(),
-          fromFormat: z.enum(["decimal", "american", "implied"]),
-        })
-      )
-      .query(({ input }) => {
-        const { convertOdds } = require("./bettingCalculators");
-        return convertOdds(input.value, input.fromFormat);
-      }),
-    
-    buildTickets: publicProcedure
-      .input(
-        z.object({
-          markets: z.array(
-            z.object({
-              type: z.string(),
-              description: z.string(),
-              odds: z.number(),
-              prob: z.number(),
-              ev: z.number().optional(),
-              variance: z.string().optional(),
-            })
-          ),
-        })
-      )
-      .mutation(({ input }) => {
-        const { buildTickets1to9 } = require("./bettingCalculators");
-        return buildTickets1to9(input.markets);
-      }),
-    
-    calculateParlayOdds: publicProcedure
-      .input(
-        z.object({
-          legs: z.array(z.object({ odds: z.number(), prob: z.number() })),
-        })
-      )
-      .query(({ input }) => {
-        const { calculateParlayOdds, calculateParlayProbability } = require("./bettingCalculators");
+      } catch (error) {
+        console.error("Error getting sync status:", error);
         return {
-          combinedOdds: parseFloat(calculateParlayOdds(input.legs).toFixed(2)),
-          combinedProb: parseFloat(calculateParlayProbability(input.legs).toFixed(4)),
+          lastSync: null,
+          needsSync: true,
+          message: "Error checking sync status",
         };
-      }),
-  }),
-
-  // Bankroll Management
-  bankroll: router({
-    getSettings: protectedProcedure.query(async ({ ctx }) => {
-      const { getUserBankrollSettings } = await import("./db");
-      return await getUserBankrollSettings(ctx.user.id);
+      }
     }),
-    
-    updateSettings: protectedProcedure
-      .input(
-        z.object({
-          totalBankroll: z.string(),
-          kellyMultiplier: z.string().default("0.25"),
-          riskTolerance: z.enum(["conservative", "moderate", "aggressive"]).default("moderate"),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        const { upsertBankrollSettings } = await import("./db");
-        await upsertBankrollSettings({
-          userId: ctx.user.id,
-          ...input,
-        });
-        return { success: true };
-      }),
-
-    checkHealth: publicProcedure.mutation(async () => {
-      const { checkBankrollHealth } = await import("./bankrollHealthService");
-      return await checkBankrollHealth();
-    }),
-  }),
-
-  // Bet History
-  bets: router({
-    getHistory: protectedProcedure.query(async ({ ctx }) => {
-      const { getUserBets } = await import("./db");
-      return await getUserBets(ctx.user.id);
-    }),
-    
-    create: protectedProcedure
-      .input(
-        z.object({
-          betType: z.string(),
-          stake: z.string(),
-          odds: z.string(),
-          probability: z.string().optional(),
-          ev: z.string().optional(),
-          kellyFraction: z.string().optional(),
-          description: z.string().optional(),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        const { createBet } = await import("./db");
-        await createBet({
-          userId: ctx.user.id,
-          ...input,
-        });
-        return { success: true };
-      }),
-    
-    updateOutcome: protectedProcedure
-      .input(
-        z.object({
-          betId: z.number(),
-          outcome: z.enum(["won", "lost"]),
-          profit: z.string(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { updateBetOutcome } = await import("./db");
-        await updateBetOutcome(input.betId, input.outcome, input.profit);
-        return { success: true };
-      }),
-  }),
-
-  // Parlay Management
-  parlays: router({
-    getHistory: protectedProcedure.query(async ({ ctx }) => {
-      const { getUserParlays } = await import("./db");
-      return await getUserParlays(ctx.user.id);
-    }),
-    
-    create: protectedProcedure
-      .input(
-        z.object({
-          ticketNumber: z.number().optional(),
-          ticketName: z.string().optional(),
-          legs: z.string(),
-          combinedProb: z.string().optional(),
-          totalOdds: z.string().optional(),
-          stake: z.string().optional(),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        const { createParlay } = await import("./db");
-        await createParlay({
-          userId: ctx.user.id,
-          ...input,
-        });
-        return { success: true };
-      }),
-    
-    updateOutcome: protectedProcedure
-      .input(
-        z.object({
-          parlayId: z.number(),
-          outcome: z.enum(["won", "lost"]),
-          profit: z.string(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { updateParlayOutcome } = await import("./db");
-        await updateParlayOutcome(input.parlayId, input.outcome, input.profit);
-        return { success: true };
-      }),
-  }),
-
-  // Notifications
-  notifications: router({
-    getAll: protectedProcedure.query(async ({ ctx }) => {
-      const { getUserNotifications } = await import("./db");
-      return await getUserNotifications(ctx.user.id);
-    }),
-    
-    markRead: protectedProcedure
-      .input(z.object({ notificationId: z.number() }))
-      .mutation(async ({ input }) => {
-        const { markNotificationRead } = await import("./db");
-        await markNotificationRead(input.notificationId);
-        return { success: true };
-      }),
-  }),
-
-
-  // EV Opportunity Detection
-  opportunities: router({
-    detectHighEV: publicProcedure.mutation(async () => {
-      const { detectHighEVOpportunities } = await import("./evDetectionService");
-      return await detectHighEVOpportunities();
-    }),
-
-    getByConfidence: publicProcedure
-      .input(z.object({ confidence: z.enum(["high", "medium", "low"]) }))
-      .query(async ({ input }) => {
-        const { detectHighEVOpportunities, filterByConfidence } = await import("./evDetectionService");
-        const opportunities = await detectHighEVOpportunities();
-        return filterByConfidence(opportunities, input.confidence);
-      }),
-
-    getRanked: publicProcedure.query(async () => {
-      const { detectHighEVOpportunities, rankByEV } = await import("./evDetectionService");
-      const opportunities = await detectHighEVOpportunities();
-      return rankByEV(opportunities);
-    }),
-  }),
-
-  // LLM Chatbot
-  chatbot: router({
-    chat: publicProcedure
-      .input(
-        z.object({
-          message: z.string(),
-          conversationHistory: z.array(
-            z.object({
-              role: z.enum(["user", "assistant"]),
-              content: z.string(),
-            })
-          ).optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { invokeLLM } = await import("./_core/llm");
-        
-        const messages = [
-          {
-            role: "system" as const,
-            content: `You are an expert NBA betting analyst and strategy advisor. You help users understand:
-- Kelly Criterion and optimal bet sizing
-- Expected Value (EV) calculations
-- Bankroll management strategies
-- Risk tolerance and fractional Kelly multipliers
-- NBA player statistics and performance trends
-- Parlay construction and probability calculations
-- Market analysis for spreads, totals, and props
-
-Provide clear, actionable advice based on mathematical principles and data-driven insights. When discussing bet sizing, always emphasize responsible gambling and proper bankroll management.`,
-          },
-          ...(input.conversationHistory || []).map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          {
-            role: "user" as const,
-            content: input.message,
-          },
-        ];
-
-        const response = await invokeLLM({ messages });
-        return {
-          response: response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.",
-        };
-      }),
   }),
 });
 

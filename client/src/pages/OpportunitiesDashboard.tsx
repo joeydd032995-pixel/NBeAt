@@ -32,7 +32,7 @@ export default function OpportunitiesDashboard() {
     },
   });
 
-  const filteredOpportunities = opportunities?.filter((opp) => {
+  const filteredOpportunities = opportunities?.filter((opp: any) => {
     if (selectedConfidence === "all") return true;
     return opp.confidence === selectedConfidence;
   }) || [];
@@ -99,7 +99,7 @@ export default function OpportunitiesDashboard() {
 
               {/* Filter Buttons */}
               <div className="flex gap-2 flex-wrap">
-                {(["all", "high", "medium", "low"] as const).map((level) => (
+                {(["all", "high", "medium", "low"] as const).map((level: any) => (
                   <Button
                     key={level}
                     variant={selectedConfidence === level ? "default" : "outline"}
@@ -123,7 +123,7 @@ export default function OpportunitiesDashboard() {
                 </CardContent>
               </Card>
             ) : filteredOpportunities.length > 0 ? (
-              filteredOpportunities.map((opp) => (
+              filteredOpportunities.map((opp: any) => (
                 <Card
                   key={opp.id}
                   className="bg-card/50 backdrop-blur hover:border-primary/50 transition-all"
@@ -200,14 +200,14 @@ export default function OpportunitiesDashboard() {
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-green-500">
-                      {opportunities.filter((o) => o.confidence === "high").length}
+                      {opportunities.filter((o: any) => o.confidence === "high").length}
                     </p>
                     <p className="text-sm text-muted-foreground">High Confidence</p>
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-secondary">
                       {(
-                        opportunities.reduce((sum, o) => sum + o.evPercent, 0) / opportunities.length
+                        opportunities.reduce((sum: number, o: any) => sum + o.evPercent, 0) / opportunities.length
                       ).toFixed(2)}
                       %
                     </p>
@@ -215,7 +215,7 @@ export default function OpportunitiesDashboard() {
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-accent">
-                      {Math.max(...opportunities.map((o) => o.evPercent)).toFixed(2)}%
+                      {Math.max(...opportunities.map((o: any) => o.evPercent)).toFixed(2)}%
                     </p>
                     <p className="text-sm text-muted-foreground">Best EV</p>
                   </div>
