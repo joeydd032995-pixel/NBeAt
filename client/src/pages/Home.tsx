@@ -9,7 +9,10 @@ import {
   Wallet, 
   LineChart,
   MessageSquare,
-  Shield
+  Shield,
+  Activity,
+  AlertCircle,
+  Bell
 } from "lucide-react";
 
 export default function Home() {
@@ -48,6 +51,27 @@ export default function Home() {
       icon: TrendingUp,
       href: "/live-odds",
       color: "text-secondary"
+    },
+    {
+      title: "Prop Analyzer",
+      description: "Player prop bets with historical hit rates and AI recommendations",
+      icon: Activity,
+      href: "/prop-analyzer",
+      color: "text-primary"
+    },
+    {
+      title: "Injury Report",
+      description: "Real-time NBA injury updates to factor into betting decisions",
+      icon: AlertCircle,
+      href: "/injury-report",
+      color: "text-secondary"
+    },
+    {
+      title: "Custom Alerts",
+      description: "Set personalized thresholds for betting opportunities",
+      icon: Bell,
+      href: "/custom-alerts",
+      color: "text-accent"
     },
     {
       title: "Data Sync",

@@ -155,3 +155,24 @@ export const bankrollSettings = mysqlTable("bankrollSettings", {
 
 export type BankrollSetting = typeof bankrollSettings.$inferSelect;
 export type InsertBankrollSetting = typeof bankrollSettings.$inferInsert;
+
+/**
+ * Custom alerts table for user-defined betting triggers
+ */
+export const alerts = mysqlTable("alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  playerName: varchar("playerName", { length: 200 }).notNull(),
+  alertType: mysqlEnum("alertType", ["points", "rebounds", "assists", "streak", "custom"]).notNull(),
+  condition: varchar("condition", { length: 50 }).notNull(), // "greater_than", "less_than", "equals", "streak"
+  threshold: varchar("threshold", { length: 20 }).notNull(),
+  consecutiveGames: int("consecutiveGames").default(1), // For streak alerts
+  isActive: int("isActive").default(1).notNull(),
+  lastTriggered: timestamp("lastTriggered"),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Alert = typeof alerts.$inferSelect;
+export type InsertAlert = typeof alerts.$inferInsert;

@@ -18,6 +18,9 @@ import MarketAnalysis from "./pages/MarketAnalysis";
 import PerformanceAnalytics from "./pages/PerformanceAnalytics";
 // import BettingChatbot from "./pages/BettingChatbot";
 import DataSync from "./pages/DataSync";
+import { PropAnalyzer } from "./pages/PropAnalyzer";
+import { InjuryReport } from "./pages/InjuryReport";
+import { CustomAlerts } from "./pages/CustomAlerts";
 // import OpportunitiesDashboard from "./pages/OpportunitiesDashboard";
 
 function Router() {
@@ -37,6 +40,9 @@ function Router() {
       <Route path={"/performance"} component={PerformanceAnalytics} />
       {/* <Route path={"/chatbot"} component={BettingChatbot} /> */}
       <Route path={"/data-sync"} component={DataSync} />
+      <Route path={"/prop-analyzer"} component={PropAnalyzer} />
+      <Route path={"/injury-report"} component={InjuryReport} />
+      <Route path={"/custom-alerts"} component={CustomAlerts} />
       {/* <Route path={"/opportunities"} component={OpportunitiesDashboard} /> */}
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

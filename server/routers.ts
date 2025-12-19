@@ -182,6 +182,114 @@ export const appRouter = router({
 
   }),
 
+  // Custom Alerts
+  alerts: router({
+    createAlert: protectedProcedure.input(z.object({
+      playerName: z.string(),
+      alertType: z.enum(["points", "rebounds", "assists", "streak", "custom"]),
+      condition: z.string(),
+      threshold: z.string(),
+      consecutiveGames: z.number().optional(),
+      description: z.string().optional()
+    })).mutation(async ({ ctx, input }) => {
+      const { createAlert } = await import("./alertsService");
+      try {
+        return await createAlert(ctx.user.id, input);
+      } catch (error) {
+        console.error("Error creating alert:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create alert" });
+      }
+    }),
+    getUserAlerts: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserAlerts } = await import("./alertsService");
+      try {
+        return await getUserAlerts(ctx.user.id);
+      } catch (error) {
+        console.error("Error fetching user alerts:", error);
+        return [];
+      }
+    }),
+    toggleAlert: protectedProcedure.input(z.object({ alertId: z.number() })).mutation(async ({ ctx, input }) => {
+      const { toggleAlert } = await import("./alertsService");
+      try {
+        return await toggleAlert(input.alertId, ctx.user.id);
+      } catch (error) {
+        console.error("Error toggling alert:", error);
+        return false;
+      }
+    }),
+    deleteAlert: protectedProcedure.input(z.object({ alertId: z.number() })).mutation(async ({ ctx, input }) => {
+      const { deleteAlert } = await import("./alertsService");
+      try {
+        return await deleteAlert(input.alertId, ctx.user.id);
+      } catch (error) {
+        console.error("Error deleting alert:", error);
+        return false;
+      }
+    }),
+    checkAllAlerts: publicProcedure.query(async () => {
+      const { checkAllAlerts } = await import("./alertsService");
+      try {
+        return await checkAllAlerts();
+      } catch (error) {
+        console.error("Error checking alerts:", error);
+        return [];
+      }
+    }),
+  }),
+
+  // Injury Reports
+  injuries: router({
+    getPlayerInjury: publicProcedure.input(z.object({ playerName: z.string() })).query(async ({ input }) => {
+      const { getPlayerInjuryStatus } = await import("./injuryService");
+      try {
+        return await getPlayerInjuryStatus(input.playerName);
+      } catch (error) {
+        console.error("Error fetching player injury:", error);
+        return null;
+      }
+    }),
+    getAllInjuries: publicProcedure.query(async () => {
+      const { getAllInjuries } = await import("./injuryService");
+      try {
+        return await getAllInjuries();
+      } catch (error) {
+        console.error("Error fetching all injuries:", error);
+        return [];
+      }
+    }),
+    getTeamInjuries: publicProcedure.input(z.object({ teamAbbr: z.string() })).query(async ({ input }) => {
+      const { getTeamInjuries } = await import("./injuryService");
+      try {
+        return await getTeamInjuries(input.teamAbbr);
+      } catch (error) {
+        console.error("Error fetching team injuries:", error);
+        return [];
+      }
+    }),
+  }),
+
+  // Player Prop Bets
+  props: router({ analyzePlayerProps: publicProcedure.input(z.object({ playerName: z.string() })).query(async ({ input }) => {
+      const { analyzePlayerProps } = await import("./propBetAnalyzer");
+      try {
+        return await analyzePlayerProps(input.playerName);
+      } catch (error) {
+        console.error("Error analyzing player props:", error);
+        return null;
+      }
+    }),
+    getTopOpportunities: publicProcedure.input(z.object({ limit: z.number().optional() })).query(async ({ input }) => {
+      const { getTopPropOpportunities } = await import("./propBetAnalyzer");
+      try {
+        return await getTopPropOpportunities(input.limit);
+      } catch (error) {
+        console.error("Error fetching top prop opportunities:", error);
+        return [];
+      }
+    }),
+  }),
+
   // Betting Odds
   odds: router({
     getNBAOdds: publicProcedure.query(async () => {

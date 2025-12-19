@@ -82,3 +82,21 @@
 - [x] Reorganized Home page feature cards for better discoverability
 - [x] Test all navigation links (Team Analytics verified)
 - [x] Create checkpoint
+
+
+## Phase 12: Prop Analyzer, Injury Reports & Custom Alerts (COMPLETE)
+- [x] Create player prop bet analyzer service
+- [x] Fetch prop odds from The Odds API (points, rebounds, assists O/U)
+- [x] Calculate historical hit rates for each prop type
+- [x] Calculate seasonal hit rates
+- [x] Integrate real-time NBA injury reports (ESPN API)
+- [x] Add injury status to player pages
+- [x] Create custom alerts system with user-defined thresholds
+- [x] Implement alert notification system
+- [x] Create prop analyzer UI page
+- [x] Create injury report UI page
+- [x] Create alerts management UI
+- [x] Write vitest tests for all features (10 tests passed)
+- [x] Test all features in browser (all working)
+- [x] Update Home page with navigation cards
+- [x] Create checkpoint
