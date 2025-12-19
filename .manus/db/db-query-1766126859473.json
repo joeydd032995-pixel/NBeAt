@@ -1,0 +1,24 @@
+{
+  "query": "SELECT fullName, ppg, rpg, apg, spg, bpg, topg, fgPct, tpPct, ftPct, ts, efg FROM players WHERE fullName LIKE '%Luka%' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2yHUkeD86G1MKf3.99b1408d27d3 --database SEf8YfNzUVxrzgKkkmVeXL --execute SELECT fullName, ppg, rpg, apg, spg, bpg, topg, fgPct, tpPct, ftPct, ts, efg FROM players WHERE fullName LIKE '%Luka%' LIMIT 1;",
+  "rows": [
+    {
+      "fullName": "Luka Doncic",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "spg": "1.5",
+      "bpg": "0.6",
+      "topg": "4.4",
+      "fgPct": "46",
+      "tpPct": "32.4",
+      "ftPct": "81.1",
+      "ts": "60.9",
+      "efg": "53.5"
+    }
+  ],
+  "messages": [],
+  "stdout": "fullName\tppg\trpg\tapg\tspg\tbpg\ttopg\tfgPct\ttpPct\tftPct\tts\tefg\nLuka Doncic\t34.7\t8.7\t8.8\t1.5\t0.6\t4.4\t46\t32.4\t81.1\t60.9\t53.5\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

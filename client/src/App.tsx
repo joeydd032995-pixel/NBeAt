@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import PlayerStats from "./pages/PlayerStats";
+import PlayerComparison from "./pages/PlayerComparison";
+import StatTrends from "./pages/StatTrends";
 import RosterVerification from "./pages/RosterVerification";
 import ParlayBuilder from "./pages/ParlayBuilder";
 // import KellyCalculator from "./pages/KellyCalculator";
@@ -21,6 +23,8 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/player-stats"} component={PlayerStats} />
+      <Route path={"/player-comparison"} component={PlayerComparison} />
+      <Route path={"/stat-trends"} component={StatTrends} />
       <Route path={"/roster-verification"} component={RosterVerification} />
       <Route path={"/parlay-builder"} component={ParlayBuilder} />
       {/* <Route path={"/kelly-calculator"} component={KellyCalculator} /> */}
