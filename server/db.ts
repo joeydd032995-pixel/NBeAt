@@ -130,9 +130,29 @@ export async function upsertPlayer(player: InsertPlayer) {
 
 export async function bulkUpsertPlayers(playerList: InsertPlayer[]) {
   const db = await getDb();
-  if (!db || playerList.length === 0) return;
-  for (const player of playerList) {
-    await db.insert(players).values(player).onDuplicateKeyUpdate({ set: player });
+  if (!db) {
+    console.error("[Database] Cannot bulk upsert players: database not available");
+    return;
+  }
+  if (playerList.length === 0) {
+    console.log("[Database] No players to upsert");
+    return;
+  }
+  
+  try {
+    console.log(`[Database] Upserting ${playerList.length} players...`);
+    let inserted = 0;
+    for (const player of playerList) {
+      try {
+        await db.insert(players).values(player).onDuplicateKeyUpdate({ set: player });
+        inserted++;
+      } catch (err) {
+        console.error(`[Database] Error inserting player ${player.fullName}:`, err);
+      }
+    }
+    console.log(`[Database] Successfully inserted ${inserted}/${playerList.length} players`);
+  } catch (error) {
+    console.error("[Database] Error during bulk upsert:", error);
   }
 }
 

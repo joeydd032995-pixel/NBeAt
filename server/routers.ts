@@ -8,15 +8,15 @@ import { TRPCError } from "@trpc/server";
 // Start background real-time sync on server startup
 setTimeout(async () => {
   try {
-    const { syncESPNLiveStats } = await import("./espnLiveStatsService");
+    const { syncFullRosters } = await import("./fullRosterSync");
     console.log("[Server] Starting initial real-time stats sync...");
-    await syncESPNLiveStats();
+    await syncFullRosters();
     
     // Schedule updates every 6 hours
     setInterval(async () => {
       try {
         console.log("[Server] Running scheduled real-time stats sync...");
-        await syncESPNLiveStats();
+        await syncFullRosters();
       } catch (error) {
         console.error("[Server] Scheduled sync error:", error);
       }
@@ -43,9 +43,9 @@ export const appRouter = router({
   // NBA Data Management
   nba: router({
     syncData: publicProcedure.mutation(async () => {
-      const { syncESPNLiveStats } = await import("./espnLiveStatsService");
+      const { syncFullRosters } = await import("./fullRosterSync");
       try {
-        return await syncESPNLiveStats();
+        return await syncFullRosters();
       } catch (error) {
         console.error("Error syncing real-time stats:", error);
         // Fallback to mock data
@@ -117,7 +117,7 @@ export const appRouter = router({
     }),
     getSyncStatus: publicProcedure.query(async () => {
       try {
-        const { getLastUpdateTime, isUpdateInProgress } = await import("./espnLiveStatsService");
+        const { getLastUpdateTime, isUpdateInProgress } = await import("./fullRosterSync");
         const lastUpdate = getLastUpdateTime();
         const updating = isUpdateInProgress();
         return {
