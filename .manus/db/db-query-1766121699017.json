@@ -1,0 +1,60 @@
+{
+  "query": "SELECT fullName, position, ppg, rpg, apg, fgPct, gamesPlayed, updatedAt FROM players LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2yHUkeD86G1MKf3.99b1408d27d3 --database SEf8YfNzUVxrzgKkkmVeXL --execute SELECT fullName, position, ppg, rpg, apg, fgPct, gamesPlayed, updatedAt FROM players LIMIT 5;",
+  "rows": [
+    {
+      "fullName": "Alex Abrines",
+      "position": "G",
+      "ppg": "20.5",
+      "rpg": "4.6",
+      "apg": "3.4",
+      "fgPct": "47",
+      "gamesPlayed": "82",
+      "updatedAt": "2025-12-19 05:19:22"
+    },
+    {
+      "fullName": "Jaylen Adams",
+      "position": "G",
+      "ppg": "19.6",
+      "rpg": "4.4",
+      "apg": "3.3",
+      "fgPct": "46",
+      "gamesPlayed": "82",
+      "updatedAt": "2025-12-19 05:19:22"
+    },
+    {
+      "fullName": "Steven Adams",
+      "position": "C",
+      "ppg": "12.8",
+      "rpg": "10.7",
+      "apg": "1.1",
+      "fgPct": "54",
+      "gamesPlayed": "82",
+      "updatedAt": "2025-12-19 05:19:22"
+    },
+    {
+      "fullName": "Bam Adebayo",
+      "position": "C-F",
+      "ppg": "21.1",
+      "rpg": "4.7",
+      "apg": "3.5",
+      "fgPct": "48",
+      "gamesPlayed": "82",
+      "updatedAt": "2025-12-19 05:19:22"
+    },
+    {
+      "fullName": "DeVaughn Akoon-Purcell",
+      "position": "G-F",
+      "ppg": "20.5",
+      "rpg": "4.6",
+      "apg": "3.4",
+      "fgPct": "47",
+      "gamesPlayed": "82",
+      "updatedAt": "2025-12-19 05:19:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "fullName\tposition\tppg\trpg\tapg\tfgPct\tgamesPlayed\tupdatedAt\nAlex Abrines\tG\t20.5\t4.6\t3.4\t47\t82\t2025-12-19 05:19:22\nJaylen Adams\tG\t19.6\t4.4\t3.3\t46\t82\t2025-12-19 05:19:22\nSteven Adams\tC\t12.8\t10.7\t1.1\t54\t82\t2025-12-19 05:19:22\nBam Adebayo\tC-F\t21.1\t4.7\t3.5\t48\t82\t2025-12-19 05:19:22\nDeVaughn Akoon-Purcell\tG-F\t20.5\t4.6\t3.4\t47\t82\t2025-12-19 05:19:22\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

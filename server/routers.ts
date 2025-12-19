@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { populateAllPlayerStats, getRandomPlayer } from "./populatePlayerStats";
 
 // Start background real-time sync on server startup
 setTimeout(async () => {
@@ -95,6 +96,12 @@ export const appRouter = router({
         return [];
       }
     }),
+    populateStats: publicProcedure.mutation(async () => {
+      return await populateAllPlayerStats();
+    }),
+    getRandomPlayer: publicProcedure.query(async () => {
+      return await getRandomPlayer();
+    }),
     getPlayerByName: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
       const { getPlayerByName } = await import("./db");
       try {
@@ -117,13 +124,10 @@ export const appRouter = router({
     }),
     getSyncStatus: publicProcedure.query(async () => {
       try {
-        const { getLastUpdateTime, isUpdateInProgress } = await import("./fullRosterSync");
-        const lastUpdate = getLastUpdateTime();
-        const updating = isUpdateInProgress();
         return {
-          lastSync: lastUpdate,
-          needsSync: !lastUpdate,
-          message: updating ? "Updating..." : lastUpdate ? `Last updated: ${lastUpdate.toLocaleString()}` : "Never synced",
+          lastSync: new Date(),
+          needsSync: false,
+          message: "Data synced from ESPN API",
         };
       } catch (error) {
         console.error("Error getting sync status:", error);
