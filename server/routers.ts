@@ -99,6 +99,29 @@ export const appRouter = router({
     populateStats: publicProcedure.mutation(async () => {
       return await populateAllPlayerStats();
     }),
+    scrapeRealStats: publicProcedure.mutation(async () => {
+      try {
+        const { scrapeRealNBAStats } = await import("./scrapers/scraperIntegration");
+        return await scrapeRealNBAStats();
+      } catch (error) {
+        console.error("Error scraping real stats:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to scrape real stats",
+        });
+      }
+    }),
+    getScraperStatus: publicProcedure.query(async () => {
+      try {
+        const { getScraperStatus } = await import("./scrapers/scraperIntegration");
+        return await getScraperStatus();
+      } catch (error) {
+        console.error("Error getting scraper status:", error);
+        return {
+          message: "Error checking scraper status",
+        };
+      }
+    }),
     getRandomPlayer: publicProcedure.query(async () => {
       return await getRandomPlayer();
     }),
@@ -138,6 +161,7 @@ export const appRouter = router({
         };
       }
     }),
+
   }),
 });
 

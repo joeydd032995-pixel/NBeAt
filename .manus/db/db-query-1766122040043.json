@@ -1,0 +1,110 @@
+{
+  "query": "SELECT fullName, gamesPlayed, ppg FROM players LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2yHUkeD86G1MKf3.99b1408d27d3 --database SEf8YfNzUVxrzgKkkmVeXL --execute SELECT fullName, gamesPlayed, ppg FROM players LIMIT 20;",
+  "rows": [
+    {
+      "fullName": "Alex Abrines",
+      "gamesPlayed": "82",
+      "ppg": "20.5"
+    },
+    {
+      "fullName": "Jaylen Adams",
+      "gamesPlayed": "82",
+      "ppg": "19.6"
+    },
+    {
+      "fullName": "Steven Adams",
+      "gamesPlayed": "82",
+      "ppg": "12.8"
+    },
+    {
+      "fullName": "Bam Adebayo",
+      "gamesPlayed": "82",
+      "ppg": "21.1"
+    },
+    {
+      "fullName": "DeVaughn Akoon-Purcell",
+      "gamesPlayed": "82",
+      "ppg": "20.5"
+    },
+    {
+      "fullName": "LaMarcus Aldridge",
+      "gamesPlayed": "82",
+      "ppg": "18"
+    },
+    {
+      "fullName": "Rawle Alkins",
+      "gamesPlayed": "82",
+      "ppg": "19.6"
+    },
+    {
+      "fullName": "Grayson Allen",
+      "gamesPlayed": "82",
+      "ppg": "18.5"
+    },
+    {
+      "fullName": "Jarrett Allen",
+      "gamesPlayed": "82",
+      "ppg": "13.9"
+    },
+    {
+      "fullName": "Al-Farouq Aminu",
+      "gamesPlayed": "82",
+      "ppg": "21.2"
+    },
+    {
+      "fullName": "Justin Anderson",
+      "gamesPlayed": "82",
+      "ppg": "20.7"
+    },
+    {
+      "fullName": "Kyle Anderson",
+      "gamesPlayed": "82",
+      "ppg": "18.5"
+    },
+    {
+      "fullName": "Ryan Anderson",
+      "gamesPlayed": "82",
+      "ppg": "19.4"
+    },
+    {
+      "fullName": "Ike Anigbogu",
+      "gamesPlayed": "82",
+      "ppg": "12.6"
+    },
+    {
+      "fullName": "Giannis Antetokounmpo",
+      "gamesPlayed": "82",
+      "ppg": "18.2"
+    },
+    {
+      "fullName": "Kostas Antetokounmpo",
+      "gamesPlayed": "82",
+      "ppg": "21.1"
+    },
+    {
+      "fullName": "Carmelo Anthony",
+      "gamesPlayed": "82",
+      "ppg": "20.9"
+    },
+    {
+      "fullName": "OG Anunoby",
+      "gamesPlayed": "82",
+      "ppg": "20.5"
+    },
+    {
+      "fullName": "Ryan Arcidiacono",
+      "gamesPlayed": "82",
+      "ppg": "21.2"
+    },
+    {
+      "fullName": "Trevor Ariza",
+      "gamesPlayed": "82",
+      "ppg": "21.1"
+    }
+  ],
+  "messages": [],
+  "stdout": "fullName\tgamesPlayed\tppg\nAlex Abrines\t82\t20.5\nJaylen Adams\t82\t19.6\nSteven Adams\t82\t12.8\nBam Adebayo\t82\t21.1\nDeVaughn Akoon-Purcell\t82\t20.5\nLaMarcus Aldridge\t82\t18\nRawle Alkins\t82\t19.6\nGrayson Allen\t82\t18.5\nJarrett Allen\t82\t13.9\nAl-Farouq Aminu\t82\t21.2\nJustin Anderson\t82\t20.7\nKyle Anderson\t82\t18.5\nRyan Anderson\t82\t19.4\nIke Anigbogu\t82\t12.6\nGiannis Antetokounmpo\t82\t18.2\nKostas Antetokounmpo\t82\t21.1\nCarmelo Anthony\t82\t20.9\nOG Anunoby\t82\t20.5\nRyan Arcidiacono\t82\t21.2\nTrevor Ariza\t82\t21.1\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

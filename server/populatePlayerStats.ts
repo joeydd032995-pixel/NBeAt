@@ -47,6 +47,11 @@ function generateRealisticStats(playerName: string, position: string | null) {
   const tsPct = Math.round(((ppg * 2) / (fga + 0.44 * fta)) * 100);
   const efgPct = Math.round(((fgm + 0.5 * threepm) / fga) * 100);
   
+  // Generate realistic games played for 2025-26 season (max 28 so far)
+  // Most players play 15-28 games, some miss games due to injury
+  const gamesHash = playerName.split('').reduce((h, c) => h + c.charCodeAt(0), 0);
+  const gamesPlayed = Math.floor((gamesHash % 14) + 15); // 15-28 games
+
   return {
     ppg: ppg.toString(),
     rpg: rpg.toString(),
@@ -67,7 +72,7 @@ function generateRealisticStats(playerName: string, position: string | null) {
     topg: topg.toString(),
     tsPct: tsPct.toString(),
     efgPct: efgPct.toString(),
-    gamesPlayed: 82,
+    gamesPlayed: gamesPlayed,
   };
 }
 
