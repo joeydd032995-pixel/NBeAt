@@ -89,4 +89,120 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+import { 
+  teams, players, bets, parlays, notifications, bankrollSettings,
+  InsertTeam, InsertPlayer, InsertBet, InsertParlay, InsertNotification, InsertBankrollSetting
+} from "../drizzle/schema";
+import { desc } from "drizzle-orm";
+
+// ========== Teams ==========
+export async function getAllTeams() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(teams);
+}
+
+export async function upsertTeam(team: InsertTeam) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(teams).values(team).onDuplicateKeyUpdate({ set: team });
+}
+
+// ========== Players ==========
+export async function getAllPlayers() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(players);
+}
+
+export async function getPlayerByName(fullName: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(players).where(eq(players.fullName, fullName)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertPlayer(player: InsertPlayer) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(players).values(player).onDuplicateKeyUpdate({ set: player });
+}
+
+export async function bulkUpsertPlayers(playerList: InsertPlayer[]) {
+  const db = await getDb();
+  if (!db || playerList.length === 0) return;
+  for (const player of playerList) {
+    await db.insert(players).values(player).onDuplicateKeyUpdate({ set: player });
+  }
+}
+
+// ========== Bets ==========
+export async function getUserBets(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(bets).where(eq(bets.userId, userId)).orderBy(desc(bets.createdAt));
+}
+
+export async function createBet(bet: InsertBet) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(bets).values(bet);
+}
+
+export async function updateBetOutcome(betId: number, outcome: "won" | "lost", profit: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(bets).set({ outcome, profit }).where(eq(bets.id, betId));
+}
+
+// ========== Parlays ==========
+export async function getUserParlays(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(parlays).where(eq(parlays.userId, userId)).orderBy(desc(parlays.createdAt));
+}
+
+export async function createParlay(parlay: InsertParlay) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(parlays).values(parlay);
+}
+
+export async function updateParlayOutcome(parlayId: number, outcome: "won" | "lost", profit: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(parlays).set({ outcome, profit }).where(eq(parlays.id, parlayId));
+}
+
+// ========== Notifications ==========
+export async function getUserNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+}
+
+export async function createNotification(notification: InsertNotification) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(notifications).values(notification);
+}
+
+export async function markNotificationRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.id, notificationId));
+}
+
+// ========== Bankroll Settings ==========
+export async function getUserBankrollSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(bankrollSettings).where(eq(bankrollSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertBankrollSettings(settings: InsertBankrollSetting) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(bankrollSettings).values(settings).onDuplicateKeyUpdate({ set: settings });
+}

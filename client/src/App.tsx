@@ -5,31 +5,37 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import PlayerStats from "./pages/PlayerStats";
+import RosterVerification from "./pages/RosterVerification";
+import ParlayBuilder from "./pages/ParlayBuilder";
+import KellyCalculator from "./pages/KellyCalculator";
+import BankrollManager from "./pages/BankrollManager";
+import MarketAnalysis from "./pages/MarketAnalysis";
+import PerformanceAnalytics from "./pages/PerformanceAnalytics";
+import BettingChatbot from "./pages/BettingChatbot";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/player-stats"} component={PlayerStats} />
+      <Route path={"/roster-verification"} component={RosterVerification} />
+      <Route path={"/parlay-builder"} component={ParlayBuilder} />
+      <Route path={"/kelly-calculator"} component={KellyCalculator} />
+      <Route path={"/bankroll-manager"} component={BankrollManager} />
+      <Route path={"/market-analysis"} component={MarketAnalysis} />
+      <Route path={"/performance"} component={PerformanceAnalytics} />
+      <Route path={"/chatbot"} component={BettingChatbot} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
           <Router />
