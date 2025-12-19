@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import PlayerStats from "./pages/PlayerStats";
 import PlayerComparison from "./pages/PlayerComparison";
 import StatTrends from "./pages/StatTrends";
+import TeamAnalytics from "./pages/TeamAnalytics";
+import LiveOdds from "./pages/LiveOdds";
 import RosterVerification from "./pages/RosterVerification";
 import ParlayBuilder from "./pages/ParlayBuilder";
 // import KellyCalculator from "./pages/KellyCalculator";
@@ -25,6 +27,8 @@ function Router() {
       <Route path={"/player-stats"} component={PlayerStats} />
       <Route path={"/player-comparison"} component={PlayerComparison} />
       <Route path={"/stat-trends"} component={StatTrends} />
+      <Route path={"/team-analytics"} component={TeamAnalytics} />
+      <Route path={"/live-odds"} component={LiveOdds} />
       <Route path={"/roster-verification"} component={RosterVerification} />
       <Route path={"/parlay-builder"} component={ParlayBuilder} />
       {/* <Route path={"/kelly-calculator"} component={KellyCalculator} /> */}

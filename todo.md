@@ -123,3 +123,16 @@
 - [x] Stat trend visualization (performance charts)
 - [x] Test all new features
 - [x] Create checkpoint
+
+
+## Phase 10: Team Analytics & Betting Odds Integration (COMPLETE)
+- [x] Create team analytics aggregation service
+- [x] Calculate offensive/defensive ratings per team
+- [x] Calculate pace and team trends
+- [x] Integrate The Odds API (free tier)
+- [x] Create team analytics UI page
+- [x] Add live odds display page
+- [x] Test all features (29 vitest tests passed)
+- [x] Browser testing: Team Analytics showing 30 teams
+- [x] Browser testing: Live Odds showing 5 games with 9 bookmakers
+- [x] Create checkpoint

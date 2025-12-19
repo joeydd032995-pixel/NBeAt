@@ -145,6 +145,24 @@ export const appRouter = router({
         return [];
       }
     }),
+    getTeamAnalytics: publicProcedure.input(z.object({ teamId: z.number().optional() })).query(async ({ input }) => {
+      const { getTeamAnalytics } = await import("./teamAnalytics");
+      try {
+        return await getTeamAnalytics(input.teamId);
+      } catch (error) {
+        console.error("Error fetching team analytics:", error);
+        return [];
+      }
+    }),
+    getTeamAnalyticsById: publicProcedure.input(z.object({ teamId: z.number() })).query(async ({ input }) => {
+      const { getTeamAnalyticsById } = await import("./teamAnalytics");
+      try {
+        return await getTeamAnalyticsById(input.teamId);
+      } catch (error) {
+        console.error("Error fetching team analytics:", error);
+        return null;
+      }
+    }),
     getSyncStatus: publicProcedure.query(async () => {
       try {
         return {
@@ -162,6 +180,28 @@ export const appRouter = router({
       }
     }),
 
+  }),
+
+  // Betting Odds
+  odds: router({
+    getNBAOdds: publicProcedure.query(async () => {
+      const { fetchNBAOdds } = await import("./oddsService");
+      try {
+        return await fetchNBAOdds();
+      } catch (error) {
+        console.error("Error fetching NBA odds:", error);
+        return [];
+      }
+    }),
+    getTeamNextGameOdds: publicProcedure.input(z.object({ teamName: z.string() })).query(async ({ input }) => {
+      const { getTeamNextGameOdds } = await import("./oddsService");
+      try {
+        return await getTeamNextGameOdds(input.teamName);
+      } catch (error) {
+        console.error("Error fetching team odds:", error);
+        return null;
+      }
+    }),
   }),
 });
 
