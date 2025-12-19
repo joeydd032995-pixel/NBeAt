@@ -15,13 +15,6 @@ import {
 export default function Home() {
   const features = [
     {
-      title: "Data Sync",
-      description: "Sync live NBA player statistics from balldontlie API",
-      icon: TrendingUp,
-      href: "/data-sync",
-      color: "text-primary"
-    },
-    {
       title: "Player Stats",
       description: "Live 2025-26 NBA player statistics (PPG, RPG, APG, FG%)",
       icon: TrendingUp,
@@ -29,18 +22,46 @@ export default function Home() {
       color: "text-primary"
     },
     {
-      title: "Roster Verification",
-      description: "Validate player-team assignments with real-time data",
-      icon: Shield,
-      href: "/roster-verification",
+      title: "Team Analytics",
+      description: "Offensive/defensive ratings, pace, and team trends for all 30 NBA teams",
+      icon: BarChart3,
+      href: "/team-analytics",
       color: "text-secondary"
+    },
+    {
+      title: "Player Comparison",
+      description: "Side-by-side stat analysis of two players for betting decisions",
+      icon: Target,
+      href: "/player-comparison",
+      color: "text-accent"
+    },
+    {
+      title: "Stat Trends",
+      description: "Performance charts showing hot/cold streaks over recent games",
+      icon: LineChart,
+      href: "/stat-trends",
+      color: "text-primary"
+    },
+    {
+      title: "Live Odds",
+      description: "Real-time betting lines from 9 major sportsbooks (moneyline, spreads, totals)",
+      icon: TrendingUp,
+      href: "/live-odds",
+      color: "text-secondary"
+    },
+    {
+      title: "Data Sync",
+      description: "Sync live NBA player statistics from Basketball Reference",
+      icon: Shield,
+      href: "/data-sync",
+      color: "text-accent"
     },
     {
       title: "Parlay Builder",
       description: "Generate structured tickets 1-9 (Floor, Sharp Spread, Core Over, Chaos)",
-      icon: Target,
+      icon: Calculator,
       href: "/parlay-builder",
-      color: "text-accent"
+      color: "text-primary"
     },
     {
       title: "Kelly Calculator",
@@ -57,18 +78,11 @@ export default function Home() {
       color: "text-secondary"
     },
     {
-      title: "Market Analysis",
-      description: "Analyze spreads, totals, and player props with EV calculations",
-      icon: BarChart3,
-      href: "/market-analysis",
-      color: "text-accent"
-    },
-    {
       title: "Performance Analytics",
       description: "Historical tracking of bets, parlays, and bankroll performance",
-      icon: LineChart,
+      icon: BarChart3,
       href: "/performance",
-      color: "text-primary"
+      color: "text-accent"
     },
     {
       title: "AI Betting Assistant",
