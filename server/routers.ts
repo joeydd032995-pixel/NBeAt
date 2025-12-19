@@ -36,6 +36,16 @@ export const appRouter = router({
       const { getAllTeams } = await import("./db");
       return await getAllTeams();
     }),
+    getSyncStatus: publicProcedure.query(async () => {
+      const { getLastSyncTime, isSyncNeeded } = await import("./dataSyncService");
+      const lastSync = getLastSyncTime();
+      const needsSync = isSyncNeeded(lastSync);
+      return {
+        lastSync,
+        needsSync,
+        message: lastSync ? `Last synced: ${lastSync.toLocaleString()}` : "Never synced",
+      };
+    }),
   }),
 
   // Betting Calculators
@@ -145,6 +155,11 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    checkHealth: publicProcedure.mutation(async () => {
+      const { checkBankrollHealth } = await import("./bankrollHealthService");
+      return await checkBankrollHealth();
+    }),
   }),
 
   // Bet History
@@ -246,6 +261,29 @@ export const appRouter = router({
         await markNotificationRead(input.notificationId);
         return { success: true };
       }),
+  }),
+
+
+  // EV Opportunity Detection
+  opportunities: router({
+    detectHighEV: publicProcedure.mutation(async () => {
+      const { detectHighEVOpportunities } = await import("./evDetectionService");
+      return await detectHighEVOpportunities();
+    }),
+
+    getByConfidence: publicProcedure
+      .input(z.object({ confidence: z.enum(["high", "medium", "low"]) }))
+      .query(async ({ input }) => {
+        const { detectHighEVOpportunities, filterByConfidence } = await import("./evDetectionService");
+        const opportunities = await detectHighEVOpportunities();
+        return filterByConfidence(opportunities, input.confidence);
+      }),
+
+    getRanked: publicProcedure.query(async () => {
+      const { detectHighEVOpportunities, rankByEV } = await import("./evDetectionService");
+      const opportunities = await detectHighEVOpportunities();
+      return rankByEV(opportunities);
+    }),
   }),
 
   // LLM Chatbot

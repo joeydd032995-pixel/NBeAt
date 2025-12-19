@@ -13,6 +13,8 @@ import BankrollManager from "./pages/BankrollManager";
 import MarketAnalysis from "./pages/MarketAnalysis";
 import PerformanceAnalytics from "./pages/PerformanceAnalytics";
 import BettingChatbot from "./pages/BettingChatbot";
+import DataSync from "./pages/DataSync";
+import OpportunitiesDashboard from "./pages/OpportunitiesDashboard";
 
 function Router() {
   return (
@@ -26,6 +28,8 @@ function Router() {
       <Route path={"/market-analysis"} component={MarketAnalysis} />
       <Route path={"/performance"} component={PerformanceAnalytics} />
       <Route path={"/chatbot"} component={BettingChatbot} />
+      <Route path={"/data-sync"} component={DataSync} />
+      <Route path={"/opportunities"} component={OpportunitiesDashboard} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -15,6 +15,13 @@ import {
 export default function Home() {
   const features = [
     {
+      title: "Data Sync",
+      description: "Sync live NBA player statistics from balldontlie API",
+      icon: TrendingUp,
+      href: "/data-sync",
+      color: "text-primary"
+    },
+    {
       title: "Player Stats",
       description: "Live 2025-26 NBA player statistics (PPG, RPG, APG, FG%)",
       icon: TrendingUp,
@@ -69,6 +76,13 @@ export default function Home() {
       icon: MessageSquare,
       href: "/chatbot",
       color: "text-secondary"
+    },
+    {
+      title: "High-EV Opportunities",
+      description: "Real-time detection of profitable betting opportunities",
+      icon: TrendingUp,
+      href: "/opportunities",
+      color: "text-accent"
     }
   ];
 
