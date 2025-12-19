@@ -15,6 +15,13 @@
       "when": 1766115043434,
       "tag": "0001_magenta_master_mold",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1766117313882,
+      "tag": "0002_violet_jubilee",
+      "breakpoints": true
     }
   ]
 }

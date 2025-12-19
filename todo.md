@@ -69,3 +69,10 @@
 - [x] Fix season stats fetch - use 2024 season instead of 2025
 - [x] Verify 500 players and 30 teams populated in database
 - [x] All core tests passing (15/15)
+
+## Phase 4: Player Stats Enhancement
+- [x] Expand database schema with additional stat categories
+- [x] Update NBA data service to fetch comprehensive stats
+- [x] Populate player stats in database
+- [x] Verify all stat categories populated
+- [ ] Create checkpoint with full stats

@@ -41,7 +41,7 @@ export type Team = typeof teams.$inferSelect;
 export type InsertTeam = typeof teams.$inferInsert;
 
 /**
- * NBA Players table
+ * NBA Players table with comprehensive stats
  */
 export const players = mysqlTable("players", {
   id: int("id").autoincrement().primaryKey(),
@@ -52,10 +52,27 @@ export const players = mysqlTable("players", {
   teamId: int("teamId"),
   position: varchar("position", { length: 20 }),
   ppg: varchar("ppg", { length: 20 }),
-  rpg: varchar("rpg", { length: 20 }),
-  apg: varchar("apg", { length: 20 }),
+  fgm: varchar("fgm", { length: 20 }),
+  fga: varchar("fga", { length: 20 }),
   fgPct: varchar("fgPct", { length: 20 }),
+  ftm: varchar("ftm", { length: 20 }),
+  fta: varchar("fta", { length: 20 }),
+  ftPct: varchar("ftPct", { length: 20 }),
+  tpm: varchar("tpm", { length: 20 }),
+  tpa: varchar("tpa", { length: 20 }),
+  tpPct: varchar("tpPct", { length: 20 }),
+  rpg: varchar("rpg", { length: 20 }),
+  orpg: varchar("orpg", { length: 20 }),
+  drpg: varchar("drpg", { length: 20 }),
+  apg: varchar("apg", { length: 20 }),
+  topg: varchar("topg", { length: 20 }),
+  spg: varchar("spg", { length: 20 }),
+  bpg: varchar("bpg", { length: 20 }),
+  pfpg: varchar("pfpg", { length: 20 }),
+  ts: varchar("ts", { length: 20 }),
+  efg: varchar("efg", { length: 20 }),
   gamesPlayed: int("gamesPlayed"),
+  minutesPerGame: varchar("minutesPerGame", { length: 20 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -63,9 +63,24 @@ interface BallDontLieStats {
   player_id: number;
   season: number;
   pts: number;
-  reb: number;
-  ast: number;
+  fgm: number;
+  fga: number;
   fg_pct: number;
+  ftm: number;
+  fta: number;
+  ft_pct: number;
+  three_pm: number;
+  three_pa: number;
+  three_p_pct: number;
+  reb: number;
+  oreb: number;
+  dreb: number;
+  ast: number;
+  tov: number;
+  stl: number;
+  blk: number;
+  pf: number;
+  min: number;
   games_played: number;
 }
 
@@ -174,6 +189,7 @@ export async function syncNBAData() {
   // Prepare players for insertion
   const playersToInsert: InsertPlayer[] = playersData.map((player) => {
     const stats = statsMap.get(player.id);
+    const gp = stats?.games_played || 1;
 
     return {
       externalId: player.id,
@@ -183,10 +199,27 @@ export async function syncNBAData() {
       teamId: player.team?.id,
       position: player.position || "",
       ppg: stats?.pts ? stats.pts.toFixed(1) : "0.0",
-      rpg: stats?.reb ? stats.reb.toFixed(1) : "0.0",
-      apg: stats?.ast ? stats.ast.toFixed(1) : "0.0",
+      fgm: stats?.fgm ? stats.fgm.toFixed(1) : "0.0",
+      fga: stats?.fga ? stats.fga.toFixed(1) : "0.0",
       fgPct: stats?.fg_pct ? (stats.fg_pct * 100).toFixed(1) : "0.0",
+      ftm: stats?.ftm ? stats.ftm.toFixed(1) : "0.0",
+      fta: stats?.fta ? stats.fta.toFixed(1) : "0.0",
+      ftPct: stats?.ft_pct ? (stats.ft_pct * 100).toFixed(1) : "0.0",
+      tpm: stats?.three_pm ? stats.three_pm.toFixed(1) : "0.0",
+      tpa: stats?.three_pa ? stats.three_pa.toFixed(1) : "0.0",
+      tpPct: stats?.three_p_pct ? (stats.three_p_pct * 100).toFixed(1) : "0.0",
+      rpg: stats?.reb ? stats.reb.toFixed(1) : "0.0",
+      orpg: stats?.oreb ? (stats.oreb / gp).toFixed(1) : "0.0",
+      drpg: stats?.dreb ? (stats.dreb / gp).toFixed(1) : "0.0",
+      apg: stats?.ast ? stats.ast.toFixed(1) : "0.0",
+      topg: stats?.tov ? (stats.tov / gp).toFixed(1) : "0.0",
+      spg: stats?.stl ? (stats.stl / gp).toFixed(1) : "0.0",
+      bpg: stats?.blk ? (stats.blk / gp).toFixed(1) : "0.0",
+      pfpg: stats?.pf ? (stats.pf / gp).toFixed(1) : "0.0",
+      ts: stats?.pts && stats?.fga ? ((stats.pts / (2 * (stats.fga + 0.44 * stats.fta))) * 100).toFixed(1) : "0.0",
+      efg: stats?.fgm && stats?.fga && stats?.three_pm ? (((stats.fgm + 0.5 * stats.three_pm) / stats.fga) * 100).toFixed(1) : "0.0",
       gamesPlayed: stats?.games_played || 0,
+      minutesPerGame: stats?.min ? (stats.min / gp).toFixed(1) : "0.0",
     };
   });
 
