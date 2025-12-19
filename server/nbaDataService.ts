@@ -3,6 +3,11 @@ import { bulkUpsertPlayers, upsertTeam } from "./db";
 import { InsertPlayer, InsertTeam } from "../drizzle/schema";
 
 const BDL_BASE = "https://api.balldontlie.io/v1";
+const BDL_API_KEY = process.env.BDL_API_KEY || "";
+
+if (!BDL_API_KEY) {
+  console.warn("[NBA Data Service] Warning: BDL_API_KEY not set. API calls may fail.");
+}
 
 // Team metadata for CBS Sports scraping
 const TEAM_META: Record<string, string> = {
@@ -76,6 +81,7 @@ export async function fetchAllPlayersFromAPI(): Promise<BallDontLiePlayer[]> {
     try {
       const resp = await axios.get(`${BDL_BASE}/players`, {
         params: { cursor, per_page: 100 },
+        headers: { Authorization: `Bearer ${BDL_API_KEY}` },
       });
 
       const data = resp.data;
@@ -107,7 +113,7 @@ export async function fetchAllPlayersFromAPI(): Promise<BallDontLiePlayer[]> {
 /**
  * Fetch season stats for players
  */
-export async function fetchSeasonStats(season: number = 2025): Promise<BallDontLieStats[]> {
+export async function fetchSeasonStats(season: number = 2024): Promise<BallDontLieStats[]> {
   const allStats: BallDontLieStats[] = [];
   let cursor = 0;
   let hasMore = true;
@@ -116,6 +122,7 @@ export async function fetchSeasonStats(season: number = 2025): Promise<BallDontL
     try {
       const resp = await axios.get(`${BDL_BASE}/season_averages`, {
         params: { season, cursor, per_page: 100 },
+        headers: { Authorization: `Bearer ${BDL_API_KEY}` },
       });
 
       const data = resp.data;
@@ -155,7 +162,7 @@ export async function syncNBAData() {
   console.log(`Fetched ${playersData.length} players`);
 
   // Fetch stats
-  const statsData = await fetchSeasonStats(2025);
+  const statsData = await fetchSeasonStats(2024);
   console.log(`Fetched ${statsData.length} player stats`);
 
   // Create a map of stats by player_id

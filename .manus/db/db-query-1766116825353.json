@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as player_count FROM players; SELECT COUNT(*) as team_count FROM teams;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2yHUkeD86G1MKf3.99b1408d27d3 --database SEf8YfNzUVxrzgKkkmVeXL --execute SELECT COUNT(*) as player_count FROM players; SELECT COUNT(*) as team_count FROM teams;",
+  "rows": [
+    {
+      "player_count": "800"
+    },
+    {
+      "player_count": "team_count"
+    },
+    {
+      "player_count": "30"
+    }
+  ],
+  "messages": [],
+  "stdout": "player_count\n800\nteam_count\n30\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}
