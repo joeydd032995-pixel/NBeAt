@@ -1,0 +1,90 @@
+{
+  "query": "SELECT fullName, gamesPlayed, ppg, rpg, apg, fgPct FROM players WHERE fullName IN ('Luka Dončić', 'Shai Gilgeous-Alexander', 'LeBron James', 'Stephen Curry') ORDER BY ppg DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2yHUkeD86G1MKf3.99b1408d27d3 --database SEf8YfNzUVxrzgKkkmVeXL --execute SELECT fullName, gamesPlayed, ppg, rpg, apg, fgPct FROM players WHERE fullName IN ('Luka Dončić', 'Shai Gilgeous-Alexander', 'LeBron James', 'Stephen Curry') ORDER BY ppg DESC LIMIT 10",
+  "rows": [
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    },
+    {
+      "fullName": "Luka Doncic",
+      "gamesPlayed": "19",
+      "ppg": "34.7",
+      "rpg": "8.7",
+      "apg": "8.8",
+      "fgPct": "46"
+    }
+  ],
+  "messages": [],
+  "stdout": "fullName\tgamesPlayed\tppg\trpg\tapg\tfgPct\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\nLuka Doncic\t19\t34.7\t8.7\t8.8\t46\n",
+  "stderr": "",
+  "execution_time_ms": 122
+}
