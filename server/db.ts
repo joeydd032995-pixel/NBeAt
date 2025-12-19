@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -118,7 +118,17 @@ export async function getAllPlayers() {
 export async function getPlayerByName(fullName: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(players).where(eq(players.fullName, fullName)).limit(1);
+  
+  // First try exact match
+  let result = await db.select().from(players).where(eq(players.fullName, fullName)).limit(1);
+  if (result.length > 0) return result[0];
+  
+  // If no exact match, try partial match using LIKE
+  const searchTerm = `%${fullName}%`;
+  result = await db.select().from(players).where(
+    sql`${players.fullName} LIKE ${searchTerm}`
+  ).limit(1);
+  
   return result.length > 0 ? result[0] : undefined;
 }
 

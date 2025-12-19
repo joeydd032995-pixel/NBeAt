@@ -25,6 +25,29 @@ export default function PlayerStats() {
     refetch();
   };
 
+  const statCategories = [
+    { key: "ppg", label: "PPG", color: "text-primary neon-glow-pink" },
+    { key: "rpg", label: "RPG", color: "text-secondary neon-glow-blue" },
+    { key: "apg", label: "APG", color: "text-accent" },
+    { key: "fgPct", label: "FG%", color: "text-primary" },
+    { key: "fgm", label: "FGM", color: "text-secondary" },
+    { key: "fga", label: "FGA", color: "text-accent" },
+    { key: "ftPct", label: "FT%", color: "text-primary" },
+    { key: "ftm", label: "FTM", color: "text-secondary" },
+    { key: "fta", label: "FTA", color: "text-accent" },
+    { key: "threePct", label: "3P%", color: "text-primary" },
+    { key: "threepm", label: "3PM", color: "text-secondary" },
+    { key: "threepa", label: "3PA", color: "text-accent" },
+    { key: "orpg", label: "ORPG", color: "text-primary" },
+    { key: "drpg", label: "DRPG", color: "text-secondary" },
+    { key: "spg", label: "SPG", color: "text-accent" },
+    { key: "bpg", label: "BPG", color: "text-primary" },
+    { key: "topg", label: "TOPG", color: "text-secondary" },
+    { key: "tsPct", label: "TS%", color: "text-accent" },
+    { key: "efgPct", label: "EFG%", color: "text-primary" },
+    { key: "gamesPlayed", label: "GP", color: "text-secondary" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8">
@@ -35,13 +58,13 @@ export default function PlayerStats() {
           </Button>
         </Link>
 
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-primary neon-glow-pink">
               PLAYER STATS ANALYSIS
             </h1>
             <p className="text-lg text-muted-foreground">
-              Live 2025-26 NBA player statistics from balldontlie API
+              Comprehensive 2025-26 NBA player statistics with 31 stat categories
             </p>
           </div>
 
@@ -49,7 +72,7 @@ export default function PlayerStats() {
           <Card className="bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle>Search Player</CardTitle>
-              <CardDescription>Enter player's full name (e.g., "LeBron James")</CardDescription>
+              <CardDescription>Enter player's full name or partial name (e.g., "LeBron" or "LeBron James")</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4">
@@ -85,50 +108,47 @@ export default function PlayerStats() {
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   </div>
                 ) : player ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="text-center space-y-2">
-                      <div className="text-3xl font-bold text-primary neon-glow-pink">
-                        {player.ppg || "N/A"}
+                  <div className="space-y-6">
+                    {/* Header Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6 border-b border-border">
+                      <div>
+                        <span className="text-muted-foreground text-sm">Position</span>
+                        <div className="text-xl font-bold text-primary">{player.position || "N/A"}</div>
                       </div>
-                      <div className="text-sm text-muted-foreground tracking-wide">PPG</div>
+                      <div>
+                        <span className="text-muted-foreground text-sm">Games Played</span>
+                        <div className="text-xl font-bold text-secondary">{player.gamesPlayed || "N/A"}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-sm">Last Updated</span>
+                        <div className="text-xl font-bold text-accent">{new Date(player.updatedAt).toLocaleDateString()}</div>
+                      </div>
                     </div>
-                    <div className="text-center space-y-2">
-                      <div className="text-3xl font-bold text-secondary neon-glow-blue">
-                        {player.rpg || "N/A"}
-                      </div>
-                      <div className="text-sm text-muted-foreground tracking-wide">RPG</div>
-                    </div>
-                    <div className="text-center space-y-2">
-                      <div className="text-3xl font-bold text-accent">
-                        {player.apg || "N/A"}
-                      </div>
-                      <div className="text-sm text-muted-foreground tracking-wide">APG</div>
-                    </div>
-                    <div className="text-center space-y-2">
-                      <div className="text-3xl font-bold text-primary">
-                        {player.fgPct || "N/A"}%
-                      </div>
-                      <div className="text-sm text-muted-foreground tracking-wide">FG%</div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {statCategories.map((stat) => {
+                        const value = (player as Record<string, any>)[stat.key];
+                        const displayValue = value !== null && value !== undefined ? 
+                          (typeof value === 'number' && value % 1 !== 0 ? value.toFixed(2) : value) 
+                          : "N/A";
+                        
+                        return (
+                          <div key={stat.key} className="text-center space-y-2 p-3 rounded-lg bg-background/50 border border-border">
+                            <div className={`text-2xl font-bold ${stat.color}`}>
+                              {displayValue}
+                            </div>
+                            <div className="text-xs text-muted-foreground tracking-wide uppercase">
+                              {stat.label}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Player not found. Please check the spelling and try again.
-                  </div>
-                )}
-
-                {player && (
-                  <div className="mt-6 pt-6 border-t border-border">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Position:</span>{" "}
-                        <span className="font-semibold">{player.position || "N/A"}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Games Played:</span>{" "}
-                        <span className="font-semibold">{player.gamesPlayed || "N/A"}</span>
-                      </div>
-                    </div>
                   </div>
                 )}
               </CardContent>
