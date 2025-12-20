@@ -74,6 +74,20 @@ export default function Home() {
       color: "text-accent"
     },
     {
+      title: "Parlay Builder",
+      description: "Build multi-leg parlays and calculate potential payouts",
+      icon: Calculator,
+      href: "/parlay-builder",
+      color: "text-primary"
+    },
+    {
+      title: "AI Assistant",
+      description: "Get AI-powered insights with access to all platform data",
+      icon: MessageSquare,
+      href: "/ai-assistant",
+      color: "text-secondary"
+    },
+    {
       title: "Data Sync",
       description: "Sync live NBA player statistics from Basketball Reference",
       icon: Shield,

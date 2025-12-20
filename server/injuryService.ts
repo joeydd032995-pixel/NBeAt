@@ -14,14 +14,19 @@ export interface InjuryReport {
 }
 
 /**
- * Fetch injury reports from ESPN API
- * ESPN provides free injury data for NBA
+ * Fetch all current NBA injuries from ESPN's injury report page
+ * This endpoint provides comprehensive injury data for all teams
  */
-async function fetchESPNInjuries(): Promise<InjuryReport[]> {
+async function fetchAllESPNInjuries(): Promise<InjuryReport[]> {
   try {
-    // ESPN injury endpoint
+    // ESPN's comprehensive injury report endpoint
     const response = await fetch(
-      "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+      "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/teams?limit=30",
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        }
+      }
     );
     
     if (!response.ok) {
@@ -32,21 +37,94 @@ async function fetchESPNInjuries(): Promise<InjuryReport[]> {
     const data = await response.json();
     const injuries: InjuryReport[] = [];
     
-    // Parse ESPN data for injury information
-    // ESPN includes injury data in team rosters
+    // Fetch injury data for each team
+    if (data.sports?.[0]?.leagues?.[0]?.teams) {
+      const teams = data.sports[0].leagues[0].teams;
+      
+      for (const teamData of teams) {
+        const team = teamData.team;
+        const teamAbbr = team.abbreviation || "";
+        
+        try {
+          // Fetch team roster with injury data
+          const rosterResponse = await fetch(
+            `https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${team.id}/roster`,
+            {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              }
+            }
+          );
+          
+          if (rosterResponse.ok) {
+            const rosterData = await rosterResponse.json();
+            
+            // Check athletes for injuries
+            if (rosterData.athletes) {
+              for (const athlete of rosterData.athletes) {
+                if (athlete.injuries && athlete.injuries.length > 0) {
+                  const injury = athlete.injuries[0];
+                  injuries.push({
+                    playerId: parseInt(athlete.id) || 0,
+                    playerName: athlete.displayName || athlete.fullName || "",
+                    team: teamAbbr,
+                    position: athlete.position?.abbreviation || "",
+                    status: mapInjuryStatus(injury.status),
+                    injuryType: injury.type || "Unknown",
+                    description: injury.details || injury.longComment || injury.shortComment || "",
+                    lastUpdated: new Date(injury.date || Date.now()),
+                    expectedReturn: injury.returnDate
+                  });
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching roster for team ${teamAbbr}:`, error);
+        }
+      }
+    }
+    
+    return injuries;
+  } catch (error) {
+    console.error("Error fetching ESPN injuries:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch injuries from today's games (fallback method)
+ */
+async function fetchTodayGameInjuries(): Promise<InjuryReport[]> {
+  try {
+    const response = await fetch(
+      "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    const injuries: InjuryReport[] = [];
+    
     if (data.events) {
       for (const event of data.events) {
         for (const competition of event.competitions || []) {
           for (const competitor of competition.competitors || []) {
             const team = competitor.team?.abbreviation || "";
             
-            // Check roster for injuries
             if (competitor.roster) {
               for (const athlete of competitor.roster) {
                 if (athlete.injuries && athlete.injuries.length > 0) {
                   const injury = athlete.injuries[0];
                   injuries.push({
-                    playerId: 0, // Will be matched later
+                    playerId: parseInt(athlete.athlete?.id) || 0,
                     playerName: athlete.athlete?.displayName || "",
                     team: team,
                     position: athlete.position?.abbreviation || "",
@@ -66,7 +144,7 @@ async function fetchESPNInjuries(): Promise<InjuryReport[]> {
     
     return injuries;
   } catch (error) {
-    console.error("Error fetching ESPN injuries:", error);
+    console.error("Error fetching today's game injuries:", error);
     return [];
   }
 }
@@ -85,9 +163,16 @@ function mapInjuryStatus(status: string): InjuryReport["status"] {
 
 /**
  * Get injury status for a specific player
+ * Fetches fresh data every time
  */
 export async function getPlayerInjuryStatus(playerName: string): Promise<InjuryReport | null> {
-  const injuries = await fetchESPNInjuries();
+  // Try comprehensive injury list first
+  let injuries = await fetchAllESPNInjuries();
+  
+  // Fallback to today's games if comprehensive list is empty
+  if (injuries.length === 0) {
+    injuries = await fetchTodayGameInjuries();
+  }
   
   // Find matching player
   const injury = injuries.find(inj => 
@@ -113,58 +198,27 @@ export async function getPlayerInjuryStatus(playerName: string): Promise<InjuryR
 
 /**
  * Get all current NBA injuries
+ * Fetches fresh data every time this is called
  */
 export async function getAllInjuries(): Promise<InjuryReport[]> {
-  return await fetchESPNInjuries();
+  // Try comprehensive injury list first
+  let injuries = await fetchAllESPNInjuries();
+  
+  // Fallback to today's games if comprehensive list is empty
+  if (injuries.length === 0) {
+    injuries = await fetchTodayGameInjuries();
+  }
+  
+  // If still no injuries, return empty array (not simulated data)
+  return injuries;
 }
 
 /**
  * Get injuries for a specific team
  */
 export async function getTeamInjuries(teamAbbr: string): Promise<InjuryReport[]> {
-  const allInjuries = await fetchESPNInjuries();
+  const allInjuries = await getAllInjuries();
   return allInjuries.filter(inj => 
     inj.team.toLowerCase() === teamAbbr.toLowerCase()
   );
-}
-
-/**
- * Simulated injury data for development/testing
- * In production, this would be replaced with real API data
- */
-export function getSimulatedInjuries(): InjuryReport[] {
-  return [
-    {
-      playerId: 0,
-      playerName: "LeBron James",
-      team: "LAL",
-      position: "F",
-      status: "QUESTIONABLE",
-      injuryType: "Ankle",
-      description: "Left ankle soreness, game-time decision",
-      lastUpdated: new Date(),
-      expectedReturn: "Game-time decision"
-    },
-    {
-      playerId: 0,
-      playerName: "Stephen Curry",
-      team: "GSW",
-      position: "G",
-      status: "DAY_TO_DAY",
-      injuryType: "Shoulder",
-      description: "Right shoulder strain, day-to-day",
-      lastUpdated: new Date()
-    },
-    {
-      playerId: 0,
-      playerName: "Kawhi Leonard",
-      team: "LAC",
-      position: "F",
-      status: "OUT",
-      injuryType: "Knee",
-      description: "Right knee management, out indefinitely",
-      lastUpdated: new Date(),
-      expectedReturn: "TBD"
-    }
-  ];
 }

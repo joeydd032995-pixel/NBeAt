@@ -21,6 +21,7 @@ import DataSync from "./pages/DataSync";
 import { PropAnalyzer } from "./pages/PropAnalyzer";
 import { InjuryReport } from "./pages/InjuryReport";
 import { CustomAlerts } from "./pages/CustomAlerts";
+import AIAssistant from "./pages/AIAssistant";
 // import OpportunitiesDashboard from "./pages/OpportunitiesDashboard";
 
 function Router() {
@@ -43,6 +44,7 @@ function Router() {
       <Route path={"/prop-analyzer"} component={PropAnalyzer} />
       <Route path={"/injury-report"} component={InjuryReport} />
       <Route path={"/custom-alerts"} component={CustomAlerts} />
+      <Route path={"/ai-assistant"} component={AIAssistant} />
       {/* <Route path={"/opportunities"} component={OpportunitiesDashboard} /> */}
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

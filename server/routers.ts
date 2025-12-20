@@ -311,6 +311,56 @@ export const appRouter = router({
       }
     }),
   }),
+
+  // AI Assistant
+  ai: router({
+    chat: publicProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string()
+        })),
+        context: z.array(z.string()).optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        
+        // Build context string
+        let systemPrompt = "You are an expert NBA betting assistant with access to real-time player stats, team analytics, betting odds, and historical data. Provide accurate, data-driven betting insights and recommendations.";
+        
+        if (input.context && input.context.length > 0) {
+          systemPrompt += "\n\nContext data provided by user:\n" + input.context.join("\n");
+        }
+        
+        // Convert messages to LLM format
+        const llmMessages = [
+          { role: "system" as const, content: systemPrompt },
+          ...input.messages.map(m => ({
+            role: m.role as "user" | "assistant",
+            content: m.content
+          }))
+        ];
+        
+        try {
+          const response = await invokeLLM({
+            messages: llmMessages
+          });
+          
+          const content = response.choices[0].message.content;
+          const messageText = typeof content === 'string' ? content : JSON.stringify(content);
+          
+          return {
+            message: messageText || "Sorry, I couldn't generate a response."
+          };
+        } catch (error) {
+          console.error("AI chat error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to get AI response"
+          });
+        }
+      })
+  }),
 });
 
 export type AppRouter = typeof appRouter;
