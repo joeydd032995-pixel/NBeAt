@@ -3,12 +3,17 @@
 Basketball Reference Scraper - Python Backup
 Scrapes real 2025-26 NBA season player statistics from basketball-reference.com
 Used as backup if Node.js scraper fails
+
+Note: Basketball Reference uses JavaScript to render tables, so we need to:
+1. Look for the table in HTML comments (BR hides tables in comments for JS rendering)
+2. Or use their CSV export endpoint
 """
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import json
 import sys
+import re
 from typing import List, Dict, Any
 
 # URL for 2025-26 NBA season per-game stats
@@ -20,12 +25,12 @@ def scrape_basketball_reference() -> List[Dict[str, Any]]:
     Returns list of player stats dictionaries
     """
     try:
-        print("[BR Scraper] Starting Basketball Reference scrape...")
-        print(f"[BR Scraper] Fetching {BR_URL}")
+        print("[BR Scraper] Starting Basketball Reference scrape...", file=sys.stderr)
+        print(f"[BR Scraper] Fetching {BR_URL}", file=sys.stderr)
         
         # Fetch the page
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         response = requests.get(BR_URL, headers=headers, timeout=30)
         response.raise_for_status()
@@ -33,12 +38,31 @@ def scrape_basketball_reference() -> List[Dict[str, Any]]:
         # Parse HTML
         soup = BeautifulSoup(response.content, "html.parser")
         
-        # Find the stats table
-        table = soup.find("table", {"id": "per_game"})
-        if not table:
-            raise Exception("Could not find stats table on Basketball Reference")
+        # Basketball Reference hides some tables in HTML comments for JS rendering
+        # First try to find the table directly
+        table = soup.find("table", {"id": "per_game_stats"})
         
-        print("[BR Scraper] Found stats table, parsing rows...")
+        if not table:
+            # Try alternate ID
+            table = soup.find("table", {"id": "per_game"})
+        
+        if not table:
+            # Look for the table inside HTML comments
+            print("[BR Scraper] Table not found directly, searching in HTML comments...", file=sys.stderr)
+            comments = soup.find_all(string=lambda text: isinstance(text, Comment))
+            for comment in comments:
+                if 'id="per_game"' in comment or 'id="per_game_stats"' in comment:
+                    # Parse the comment as HTML
+                    comment_soup = BeautifulSoup(comment, "html.parser")
+                    table = comment_soup.find("table")
+                    if table:
+                        print("[BR Scraper] Found table in HTML comment", file=sys.stderr)
+                        break
+        
+        if not table:
+            raise Exception("Could not find stats table on Basketball Reference (checked direct and comments)")
+        
+        print("[BR Scraper] Found stats table, parsing rows...", file=sys.stderr)
         
         players = []
         tbody = table.find("tbody")
@@ -64,9 +88,11 @@ def scrape_basketball_reference() -> List[Dict[str, Any]]:
                 
                 player_link = player_cell.find("a")
                 if not player_link:
-                    continue
+                    # Try getting text directly if no link
+                    full_name = player_cell.get_text(strip=True)
+                else:
+                    full_name = player_link.get_text(strip=True)
                 
-                full_name = player_link.get_text(strip=True)
                 if not full_name:
                     continue
                 
@@ -91,7 +117,8 @@ def scrape_basketball_reference() -> List[Dict[str, Any]]:
                     cell = row.find("td", {"data-stat": stat_name})
                     if cell:
                         try:
-                            return float(cell.get_text(strip=True) or 0)
+                            text = cell.get_text(strip=True)
+                            return float(text) if text else 0.0
                         except ValueError:
                             return 0.0
                     return 0.0
@@ -150,14 +177,14 @@ def scrape_basketball_reference() -> List[Dict[str, Any]]:
                 players.append(player_data)
                 
             except Exception as e:
-                print(f"[BR Scraper] Error parsing row: {e}")
+                print(f"[BR Scraper] Error parsing row: {e}", file=sys.stderr)
                 continue
         
-        print(f"[BR Scraper] Successfully scraped {len(players)} players")
+        print(f"[BR Scraper] Successfully scraped {len(players)} players", file=sys.stderr)
         return players
         
     except Exception as e:
-        print(f"[BR Scraper] Error scraping Basketball Reference: {e}")
+        print(f"[BR Scraper] Error scraping Basketball Reference: {e}", file=sys.stderr)
         raise
 
 

@@ -16,26 +16,28 @@ def fetch_real_nba_stats():
     Returns list of player stats dictionaries
     """
     try:
-        print("[NBA API] Starting real NBA stats fetch...")
-        print("[NBA API] Connecting to NBA.com API...")
+        print("[NBA API] Starting real NBA stats fetch...", file=sys.stderr)
+        print("[NBA API] Connecting to NBA.com API...", file=sys.stderr)
         
         # Get player stats for 2025-26 season
         # Using correct nba_api parameter names
+        # CRITICAL: per_mode_detailed='PerGame' returns per-game averages instead of totals
         stats_data = leaguedashplayerstats.LeagueDashPlayerStats(
             season='2025-26',
-            season_type_all_star='Regular Season'
+            season_type_all_star='Regular Season',
+            per_mode_detailed='PerGame'
         )
         
-        print("[NBA API] Successfully retrieved stats from NBA.com")
+        print("[NBA API] Successfully retrieved stats from NBA.com", file=sys.stderr)
         
         # Extract the data
         headers = stats_data.get_data_frames()[0].columns.tolist()
         rows = stats_data.get_data_frames()[0].values.tolist()
         
-        print(f"[NBA API] Found {len(rows)} players with stats")
+        print(f"[NBA API] Found {len(rows)} players with stats", file=sys.stderr)
         
         # Get player names mapping
-        print("[NBA API] Fetching player names...")
+        print("[NBA API] Fetching player names...", file=sys.stderr)
         all_players = players.get_players()
         player_name_map = {p['id']: p['full_name'] for p in all_players}
         
@@ -106,21 +108,21 @@ def fetch_real_nba_stats():
                 player_stats_list.append(stat)
                 
             except Exception as e:
-                print(f"[NBA API] Error processing player: {e}")
+                print(f"[NBA API] Error processing player: {e}", file=sys.stderr)
                 continue
         
-        print(f"[NBA API] Successfully processed {len(player_stats_list)} players")
+        print(f"[NBA API] Successfully processed {len(player_stats_list)} players", file=sys.stderr)
         return player_stats_list
         
     except Exception as e:
-        print(f"[NBA API] Error fetching stats: {e}")
+        print(f"[NBA API] Error fetching stats: {e}", file=sys.stderr)
         raise
 
 
 def main():
     """Main entry point"""
     try:
-        print("[NBA API] Fetching real 2025-26 NBA season statistics...")
+        print("[NBA API] Fetching real 2025-26 NBA season statistics...", file=sys.stderr)
         player_stats = fetch_real_nba_stats()
         
         # Output as JSON to stdout
