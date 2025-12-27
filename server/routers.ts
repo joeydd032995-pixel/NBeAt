@@ -138,6 +138,18 @@ export const appRouter = router({
     getRandomPlayer: publicProcedure.query(async () => {
       return await getRandomPlayer();
     }),
+    cleanupDuplicates: publicProcedure.mutation(async () => {
+      const { cleanupDuplicatePlayers } = await import("./db");
+      try {
+        return await cleanupDuplicatePlayers();
+      } catch (error) {
+        console.error("Error cleaning up duplicates:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to cleanup duplicate players",
+        });
+      }
+    }),
     getPlayerByName: publicProcedure.input(z.object({ name: z.string() })).query(async ({ input }) => {
       const { getPlayerByName } = await import("./db");
       try {

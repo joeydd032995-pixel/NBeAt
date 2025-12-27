@@ -197,17 +197,121 @@ export async function bulkUpsertPlayers(playerList: InsertPlayer[]) {
   try {
     console.log(`[Database] Upserting ${playerList.length} players...`);
     let inserted = 0;
+    let updated = 0;
+    
     for (const player of playerList) {
       try {
-        await db.insert(players).values(player).onDuplicateKeyUpdate({ set: player });
+        // First check if player exists by fullName (most reliable match)
+        const existingByName = await db.select().from(players)
+          .where(eq(players.fullName, player.fullName))
+          .limit(1);
+        
+        if (existingByName.length > 0) {
+          // Update existing player by fullName
+          await db.update(players)
+            .set({
+              externalId: player.externalId,
+              firstName: player.firstName,
+              lastName: player.lastName,
+              teamId: player.teamId,
+              position: player.position,
+              ppg: player.ppg,
+              fgm: player.fgm,
+              fga: player.fga,
+              fgPct: player.fgPct,
+              ftm: player.ftm,
+              fta: player.fta,
+              ftPct: player.ftPct,
+              tpm: player.tpm,
+              tpa: player.tpa,
+              tpPct: player.tpPct,
+              rpg: player.rpg,
+              orpg: player.orpg,
+              drpg: player.drpg,
+              apg: player.apg,
+              topg: player.topg,
+              spg: player.spg,
+              bpg: player.bpg,
+              pfpg: player.pfpg,
+              ts: player.ts,
+              efg: player.efg,
+              gamesPlayed: player.gamesPlayed,
+              minutesPerGame: player.minutesPerGame,
+            })
+            .where(eq(players.fullName, player.fullName));
+          updated++;
+          continue;
+        }
+        
+        // Insert new player
+        await db.insert(players).values(player);
         inserted++;
       } catch (err) {
-        console.error(`[Database] Error inserting player ${player.fullName}:`, err);
+        console.error(`[Database] Error upserting player ${player.fullName}:`, err);
       }
     }
-    console.log(`[Database] Successfully inserted ${inserted}/${playerList.length} players`);
+    console.log(`[Database] Successfully processed ${playerList.length} players (${inserted} inserted, ${updated} updated)`);
   } catch (error) {
     console.error("[Database] Error during bulk upsert:", error);
+  }
+}
+
+// ========== Player Cleanup ==========
+export async function cleanupDuplicatePlayers(): Promise<{ removed: number; remaining: number }> {
+  const db = await getDb();
+  if (!db) {
+    console.error("[Database] Cannot cleanup players: database not available");
+    return { removed: 0, remaining: 0 };
+  }
+  
+  try {
+    console.log("[Database] Starting duplicate player cleanup...");
+    
+    // Get all players
+    const allPlayers = await db.select().from(players);
+    console.log(`[Database] Found ${allPlayers.length} total player records`);
+    
+    // Group by fullName
+    const playersByName = new Map<string, typeof allPlayers>();
+    for (const player of allPlayers) {
+      const name = player.fullName || '';
+      if (!playersByName.has(name)) {
+        playersByName.set(name, []);
+      }
+      playersByName.get(name)!.push(player);
+    }
+    
+    console.log(`[Database] Found ${playersByName.size} unique player names`);
+    
+    // Find duplicates and keep the one with the most stats (highest PPG or most recent)
+    let removed = 0;
+    for (const [name, entries] of playersByName) {
+      if (entries.length > 1) {
+        // Sort by PPG descending (keep the one with real stats)
+        entries.sort((a, b) => {
+          const ppgA = parseFloat(a.ppg || '0');
+          const ppgB = parseFloat(b.ppg || '0');
+          return ppgB - ppgA;
+        });
+        
+        // Keep the first one (highest PPG), delete the rest
+        const toKeep = entries[0];
+        const toDelete = entries.slice(1);
+        
+        for (const dup of toDelete) {
+          await db.delete(players).where(eq(players.id, dup.id));
+          removed++;
+        }
+      }
+    }
+    
+    const remaining = allPlayers.length - removed;
+    console.log(`[Database] Cleanup complete: removed ${removed} duplicates, ${remaining} players remaining`);
+    
+    return { removed, remaining };
+  } catch (error) {
+    console.error("[Database] Error during cleanup:", error);
+    return { removed: 0, remaining: 0 };
   }
 }
 

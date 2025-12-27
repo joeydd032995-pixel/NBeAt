@@ -19,11 +19,11 @@ def fetch_real_nba_stats():
         print("[NBA API] Starting real NBA stats fetch...", file=sys.stderr)
         print("[NBA API] Connecting to NBA.com API...", file=sys.stderr)
         
-        # Get player stats for 2025-26 season
+        # Get player stats for 2024-25 season (current season)
         # Using correct nba_api parameter names
         # CRITICAL: per_mode_detailed='PerGame' returns per-game averages instead of totals
         stats_data = leaguedashplayerstats.LeagueDashPlayerStats(
-            season='2025-26',
+            season='2024-25',
             season_type_all_star='Regular Season',
             per_mode_detailed='PerGame'
         )
@@ -125,7 +125,7 @@ def fetch_real_nba_stats():
 def main():
     """Main entry point"""
     try:
-        print("[NBA API] Fetching real 2025-26 NBA season statistics...", file=sys.stderr)
+        print("[NBA API] Fetching real 2024-25 NBA season statistics...", file=sys.stderr)
         player_stats = fetch_real_nba_stats()
         
         # Output as JSON to stdout

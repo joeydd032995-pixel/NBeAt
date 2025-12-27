@@ -6,6 +6,17 @@ import * as path from "path";
 
 const ESPN_API_BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 
+/**
+ * Normalize a name for matching by removing diacritics and converting to lowercase
+ */
+function normalizeName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .toLowerCase()
+    .trim();
+}
+
 // Team abbreviation to ID mapping for the database
 const TEAM_ABBR_TO_ID: Record<string, number> = {
   "ATL": 1, "BOS": 2, "BKN": 3, "BRK": 3, "CHA": 4, "CHO": 4, "CHI": 5, "CLE": 6,
@@ -72,7 +83,8 @@ function loadRealStatsFromJSON(): RealPlayerStats[] | null {
 }
 
 /**
- * Sync all 30 NBA team rosters with REAL stats from JSON file or NBA API
+ * Sync all NBA players with REAL stats from JSON file as PRIMARY source
+ * This ensures ALL players with stats get synced, not just those on ESPN rosters
  */
 export async function syncFullRosters(): Promise<{
   playersCount: number;
@@ -82,18 +94,16 @@ export async function syncFullRosters(): Promise<{
   try {
     console.log("[Full Roster Sync] Starting complete roster sync with REAL stats...");
 
-    // Step 1: Load real stats from JSON file (primary source)
+    // Step 1: Load real stats from JSON file (PRIMARY source - all players with stats)
     const realStats = loadRealStatsFromJSON();
-    const statsMap = new Map<string, RealPlayerStats>();
     
-    if (realStats) {
-      realStats.forEach(player => {
-        statsMap.set(player.fullName.toLowerCase(), player);
-      });
-      console.log(`[Full Roster Sync] Created stats lookup map with ${statsMap.size} players`);
+    if (!realStats || realStats.length === 0) {
+      throw new Error("No player stats found in JSON file - cannot sync");
     }
+    
+    console.log(`[Full Roster Sync] Loaded ${realStats.length} players with REAL stats from JSON`);
 
-    // Step 2: Fetch all teams from ESPN
+    // Step 2: Fetch all teams from ESPN for team data
     console.log("[Full Roster Sync] Fetching all teams...");
     const teamsResp = await axios.get(`${ESPN_API_BASE}/teams`, { timeout: 15000 });
     const teams = teamsResp.data?.sports?.[0]?.leagues?.[0]?.teams || [];
@@ -115,122 +125,96 @@ export async function syncFullRosters(): Promise<{
     }
     console.log(`[Full Roster Sync] Synced ${teamsToInsert.length} teams to database`);
 
-    // Step 4: Fetch rosters and match with real stats
-    const playersToInsert: InsertPlayer[] = [];
-    let totalFetched = 0;
-    let matchedWithRealStats = 0;
-
+    // Step 4: Build ESPN player lookup for external IDs
+    const espnPlayerMap = new Map<string, { id: string; firstName: string; lastName: string }>();
+    
     for (let i = 0; i < teams.length; i++) {
       const teamId = teams[i].team.id;
       const teamName = teams[i].team.displayName;
-      const teamAbbr = teams[i].team.abbreviation;
 
       try {
-        console.log(`[Full Roster Sync] Fetching roster ${i + 1}/${teams.length}: ${teamName}...`);
-        
         const rosterResp = await axios.get(`${ESPN_API_BASE}/teams/${teamId}/roster`, {
           timeout: 15000,
         });
 
         const athletes = rosterResp.data?.athletes || [];
-        console.log(`[Full Roster Sync] Got ${athletes.length} players from ${teamName}`);
-
-        // Convert athletes to player records with REAL stats
         for (const athlete of athletes) {
-          const playerName = athlete.displayName;
-          const position = athlete.position?.abbreviation || "G";
-          
-          // Look up real stats from JSON
-          const realPlayerStats = statsMap.get(playerName.toLowerCase());
-          
-          if (realPlayerStats) {
-            // Use REAL stats from JSON file
-            matchedWithRealStats++;
-            playersToInsert.push({
-              externalId: parseInt(athlete.id),
-              firstName: athlete.firstName,
-              lastName: athlete.lastName,
-              fullName: playerName,
-              teamId: TEAM_ABBR_TO_ID[realPlayerStats.team] || TEAM_ABBR_TO_ID[teamAbbr] || 0,
-              position: realPlayerStats.position || position,
-              ppg: realPlayerStats.ppg.toString(),
-              fgm: realPlayerStats.fgm.toString(),
-              fga: realPlayerStats.fga.toString(),
-              fgPct: realPlayerStats.fgPct.toString(),
-              ftm: realPlayerStats.ftm.toString(),
-              fta: realPlayerStats.fta.toString(),
-              ftPct: realPlayerStats.ftPct.toString(),
-              tpm: realPlayerStats.tpm.toString(),
-              tpa: realPlayerStats.tpa.toString(),
-              tpPct: realPlayerStats.tpPct.toString(),
-              rpg: realPlayerStats.rpg.toString(),
-              orpg: realPlayerStats.orpg.toString(),
-              drpg: realPlayerStats.drpg.toString(),
-              apg: realPlayerStats.apg.toString(),
-              topg: realPlayerStats.topg.toString(),
-              spg: realPlayerStats.spg.toString(),
-              bpg: realPlayerStats.bpg.toString(),
-              pfpg: realPlayerStats.pfpg.toString(),
-              ts: realPlayerStats.ts.toString(),
-              efg: realPlayerStats.efg.toString(),
-              gamesPlayed: realPlayerStats.gamesPlayed,
-              minutesPerGame: realPlayerStats.mpg.toString(),  // Now using real MPG data
-            });
-          } else {
-            // Player not in JSON - insert with zero stats (will be updated on next scrape)
-            playersToInsert.push({
-              externalId: parseInt(athlete.id),
-              firstName: athlete.firstName,
-              lastName: athlete.lastName,
-              fullName: playerName,
-              teamId: TEAM_ABBR_TO_ID[teamAbbr] || 0,
-              position: position,
-              ppg: "0",
-              fgm: "0",
-              fga: "0",
-              fgPct: "0",
-              ftm: "0",
-              fta: "0",
-              ftPct: "0",
-              tpm: "0",
-              tpa: "0",
-              tpPct: "0",
-              rpg: "0",
-              orpg: "0",
-              drpg: "0",
-              apg: "0",
-              topg: "0",
-              spg: "0",
-              bpg: "0",
-              pfpg: "0",
-              ts: "0",
-              efg: "0",
-              gamesPlayed: 0,
-              minutesPerGame: "0",
-            });
-          }
+          const normalizedName = normalizeName(athlete.displayName);
+          espnPlayerMap.set(normalizedName, {
+            id: athlete.id,
+            firstName: athlete.firstName,
+            lastName: athlete.lastName,
+          });
         }
-
-        totalFetched += athletes.length;
 
         // Rate limiting
         if (i < teams.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
       } catch (error) {
         console.error(`[Full Roster Sync] Error fetching roster for ${teamName}:`, error);
       }
     }
+    
+    console.log(`[Full Roster Sync] Built ESPN lookup with ${espnPlayerMap.size} players`);
 
-    console.log(`[Full Roster Sync] Total players fetched: ${totalFetched}`);
-    console.log(`[Full Roster Sync] Players matched with real stats: ${matchedWithRealStats}`);
-    console.log(`[Full Roster Sync] Inserting ${playersToInsert.length} players into database...`);
+    // Step 5: Create player records from JSON stats (PRIMARY source)
+    const playersToInsert: InsertPlayer[] = [];
+    let matchedWithEspn = 0;
 
-    // Step 5: Bulk insert all players
+    for (const player of realStats) {
+      const normalizedName = normalizeName(player.fullName);
+      const espnData = espnPlayerMap.get(normalizedName);
+      
+      // Parse first/last name from fullName if ESPN data not available
+      const nameParts = player.fullName.split(' ');
+      const firstName = espnData?.firstName || nameParts[0] || '';
+      const lastName = espnData?.lastName || nameParts.slice(1).join(' ') || '';
+      
+      if (espnData) {
+        matchedWithEspn++;
+      }
+
+      playersToInsert.push({
+        externalId: espnData ? parseInt(espnData.id) : Math.floor(Math.random() * 900000) + 100000,
+        firstName,
+        lastName,
+        fullName: player.fullName,
+        teamId: TEAM_ABBR_TO_ID[player.team] || 0,
+        position: player.position,
+        ppg: player.ppg.toString(),
+        fgm: player.fgm.toString(),
+        fga: player.fga.toString(),
+        fgPct: player.fgPct.toString(),
+        ftm: player.ftm.toString(),
+        fta: player.fta.toString(),
+        ftPct: player.ftPct.toString(),
+        tpm: player.tpm.toString(),
+        tpa: player.tpa.toString(),
+        tpPct: player.tpPct.toString(),
+        rpg: player.rpg.toString(),
+        orpg: player.orpg.toString(),
+        drpg: player.drpg.toString(),
+        apg: player.apg.toString(),
+        topg: player.topg.toString(),
+        spg: player.spg.toString(),
+        bpg: player.bpg.toString(),
+        pfpg: player.pfpg.toString(),
+        ts: player.ts.toString(),
+        efg: player.efg.toString(),
+        gamesPlayed: player.gamesPlayed,
+        minutesPerGame: player.mpg.toString(),
+      });
+    }
+
+    console.log(`[Full Roster Sync] Created ${playersToInsert.length} player records (${matchedWithEspn} matched with ESPN IDs)`);
+    console.log(`[Full Roster Sync] ALL ${playersToInsert.length} players have COMPLETE stats from NBA API`);
+
+    // Step 6: Bulk insert all players
     await bulkUpsertPlayers(playersToInsert);
 
     const lastUpdate = new Date();
-    console.log(`[Full Roster Sync] Sync complete! ${playersToInsert.length} players inserted (${matchedWithRealStats} with real stats)`);
+    console.log(`[Full Roster Sync] Sync complete! ${playersToInsert.length} players with FULL stats inserted`);
 
     return {
       playersCount: playersToInsert.length,
