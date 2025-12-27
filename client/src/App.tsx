@@ -22,6 +22,7 @@ import { PropAnalyzer } from "./pages/PropAnalyzer";
 import { InjuryReport } from "./pages/InjuryReport";
 import { CustomAlerts } from "./pages/CustomAlerts";
 import AIAssistant from "./pages/AIAssistant";
+import PropsAnalytics from "./pages/PropsAnalytics";
 // import OpportunitiesDashboard from "./pages/OpportunitiesDashboard";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
       {/* <Route path={"/chatbot"} component={BettingChatbot} /> */}
       <Route path={"/data-sync"} component={DataSync} />
       <Route path={"/prop-analyzer"} component={PropAnalyzer} />
+      <Route path={"/props-analytics"} component={PropsAnalytics} />
       <Route path={"/injury-report"} component={InjuryReport} />
       <Route path={"/custom-alerts"} component={CustomAlerts} />
       <Route path={"/ai-assistant"} component={AIAssistant} />

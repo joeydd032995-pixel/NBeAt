@@ -195,6 +195,164 @@ export const appRouter = router({
 
   }),
 
+  // Props Analytics - Advanced player prop projections and betting analytics
+  propsAnalytics: router({
+    // Calculate base PPG projection
+    baseProjection: publicProcedure
+      .input(z.object({
+        season_ppg: z.number(),
+        expected_minutes: z.number().optional(),
+        avg_minutes: z.number(),
+        adjustment_factor: z.number().optional().default(1.0),
+      }))
+      .mutation(async ({ input }) => {
+        const { calculateBaseProjection } = await import("./propsAnalyticsService");
+        return await calculateBaseProjection({
+          name: "Player",
+          season_ppg: input.season_ppg,
+          expected_minutes: input.expected_minutes,
+          avg_minutes: input.avg_minutes,
+        });
+      }),
+
+    // Calculate betting edge vs line
+    calculateEdge: publicProcedure
+      .input(z.object({
+        projection: z.number(),
+        line: z.number(),
+        min_edge: z.number().optional().default(0.5),
+      }))
+      .mutation(async ({ input }) => {
+        const { calculateEdge } = await import("./propsAnalyticsService");
+        return await calculateEdge(input.projection, input.line, input.min_edge);
+      }),
+
+    // Analyze player variance
+    analyzeVariance: publicProcedure
+      .input(z.object({
+        game_logs: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        const { analyzeVariance } = await import("./propsAnalyticsService");
+        return await analyzeVariance(input.game_logs);
+      }),
+
+    // Calculate hit rate for a line
+    calculateHitRate: publicProcedure
+      .input(z.object({
+        game_logs: z.array(z.number()),
+        line: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const { calculateHitRate } = await import("./propsAnalyticsService");
+        return await calculateHitRate(input.game_logs, input.line);
+      }),
+
+    // Run Monte Carlo simulation
+    monteCarlo: publicProcedure
+      .input(z.object({
+        base_projection: z.number(),
+        std_dev: z.number(),
+        line: z.number(),
+        n_sims: z.number().optional().default(10000),
+      }))
+      .mutation(async ({ input }) => {
+        const { runMonteCarlo } = await import("./propsAnalyticsService");
+        return await runMonteCarlo(
+          input.base_projection,
+          input.std_dev,
+          input.line,
+          input.n_sims
+        );
+      }),
+
+    // Run full integrated analysis for a player
+    fullAnalysis: publicProcedure
+      .input(z.object({
+        name: z.string(),
+        season_ppg: z.number(),
+        avg_minutes: z.number(),
+        expected_minutes: z.number().optional(),
+        line: z.number(),
+        is_home: z.boolean().optional().default(true),
+        is_favorite: z.boolean().optional().default(true),
+        spread: z.number().optional().default(0),
+        total: z.number().optional().default(220),
+        days_rest: z.number().optional().default(2),
+        is_back_to_back: z.boolean().optional().default(false),
+        game_logs: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { runFullAnalysis } = await import("./propsAnalyticsService");
+        return await runFullAnalysis(input, input.line);
+      }),
+
+    // Analyze player by name from database
+    analyzePlayerByName: publicProcedure
+      .input(z.object({
+        playerName: z.string(),
+        line: z.number(),
+        is_home: z.boolean().optional(),
+        is_favorite: z.boolean().optional(),
+        spread: z.number().optional(),
+        total: z.number().optional(),
+        days_rest: z.number().optional(),
+        is_back_to_back: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { analyzePlayerByName } = await import("./propsAnalyticsService");
+        return await analyzePlayerByName(input.playerName, input.line, {
+          isHome: input.is_home,
+          isFavorite: input.is_favorite,
+          spread: input.spread,
+          total: input.total,
+          daysRest: input.days_rest,
+          isBackToBack: input.is_back_to_back,
+        });
+      }),
+
+    // Calculate prop-specific projection (assists, rebounds, etc.)
+    propSpecific: publicProcedure
+      .input(z.object({
+        prop_type: z.enum(["assists", "rebounds", "steals", "blocks", "threes"]),
+        position: z.enum(["PG", "SG", "SF", "PF", "C"]),
+        team_avg: z.number(),
+        pace_mult: z.number().optional().default(1.0),
+      }))
+      .mutation(async ({ input }) => {
+        const { calculatePropSpecific } = await import("./propsAnalyticsService");
+        return await calculatePropSpecific(
+          input.prop_type,
+          input.position,
+          input.team_avg,
+          input.pace_mult
+        );
+      }),
+
+    // Batch analysis for multiple players
+    batchAnalysis: publicProcedure
+      .input(z.object({
+        players: z.array(z.object({
+          name: z.string(),
+          season_ppg: z.number(),
+          avg_minutes: z.number(),
+          line: z.number(),
+          expected_minutes: z.number().optional(),
+          is_home: z.boolean().optional(),
+          is_favorite: z.boolean().optional(),
+          spread: z.number().optional(),
+          total: z.number().optional(),
+          days_rest: z.number().optional(),
+          is_back_to_back: z.boolean().optional(),
+          game_logs: z.array(z.number()).optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const { runBatchAnalysis } = await import("./propsAnalyticsService");
+        return await runBatchAnalysis(input.players);
+      }),
+  }),
+
   // Custom Alerts
   alerts: router({
     createAlert: protectedProcedure.input(z.object({
