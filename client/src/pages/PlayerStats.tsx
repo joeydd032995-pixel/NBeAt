@@ -113,10 +113,10 @@ export default function PlayerStats() {
         )}
 
         {/* No Player Found */}
-        {searchQuery && !isSearching && !displayPlayer && (
+        {!isLoadingRandom && !displayPlayer && (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No player found matching "{searchQuery}"</p>
-            <p className="text-gray-500 text-sm mt-2">Try searching with the full name</p>
+            <p className="text-gray-400 text-lg">No player selected</p>
+            <p className="text-gray-500 text-sm mt-2">Search for a player above</p>
           </div>
         )}
       </div>

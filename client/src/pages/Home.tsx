@@ -81,10 +81,10 @@ export default function Home() {
       color: "text-primary"
     },
     {
-      title: "Kelly Calculator",
-      description: "Optimal bet sizing with fractional Kelly multiplier support",
+      title: "Prop Analyzer",
+      description: "Analyze prop bets with historical hit rates and AI recommendations",
       icon: Calculator,
-      href: "/kelly-calculator",
+      href: "/prop-analyzer",
       color: "text-primary"
     },
     {
@@ -105,14 +105,14 @@ export default function Home() {
       title: "AI Betting Assistant",
       description: "LLM-powered chatbot for strategy advice and personalized recommendations",
       icon: MessageSquare,
-      href: "/chatbot",
+      href: "/ai-assistant",
       color: "text-secondary"
     },
     {
-      title: "High-EV Opportunities",
-      description: "Real-time detection of profitable betting opportunities",
+      title: "Data Sync",
+      description: "Sync and verify NBA player data from official sources",
       icon: TrendingUp,
-      href: "/opportunities",
+      href: "/data-sync",
       color: "text-accent"
     }
   ];
