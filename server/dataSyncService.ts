@@ -1,6 +1,4 @@
-import { syncNBAData } from "./nbaDataService";
-import { createNotification } from "./db";
-import { InsertNotification } from "../drizzle/schema";
+import { forceRefreshFromNBAAPI } from "./scrapers/scraperIntegration";
 
 interface SyncResult {
   success: boolean;
@@ -11,24 +9,29 @@ interface SyncResult {
 }
 
 /**
- * Sync NBA data from external sources
+ * Sync NBA data from official NBA API (real stats only)
  */
 export async function performDataSync(): Promise<SyncResult> {
   try {
-    console.log("[DataSync] Starting NBA data synchronization...");
+    console.log("[DataSync] Starting NBA data synchronization from NBA API...");
     
-    const result = await syncNBAData();
+    // Use the real NBA API scraper (no fake data)
+    const result = await forceRefreshFromNBAAPI();
     
-    const message = `Successfully synced ${result.playersCount} players and ${result.teamsCount} teams from balldontlie API`;
+    if (!result.success) {
+      throw new Error(result.error || "Failed to fetch stats from NBA API");
+    }
+    
+    const message = `Successfully synced ${result.playersCount} players with real 2025-26 stats from NBA.com`;
     console.log(`[DataSync] ${message}`);
     
     // Notify owner of successful sync
-    await notifyDataSyncCompletion(result.playersCount, result.teamsCount);
+    await notifyDataSyncCompletion(result.playersCount || 0, 30);
     
     return {
       success: true,
-      playersCount: result.playersCount,
-      teamsCount: result.teamsCount,
+      playersCount: result.playersCount || 0,
+      teamsCount: 30, // All NBA teams
       message,
       timestamp: new Date(),
     };

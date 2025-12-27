@@ -111,6 +111,18 @@ export const appRouter = router({
         });
       }
     }),
+    forceRefreshStats: publicProcedure.mutation(async () => {
+      try {
+        const { forceRefreshFromNBAAPI } = await import("./scrapers/scraperIntegration");
+        return await forceRefreshFromNBAAPI();
+      } catch (error) {
+        console.error("Error force refreshing stats:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to force refresh stats from NBA API",
+        });
+      }
+    }),
     getScraperStatus: publicProcedure.query(async () => {
       try {
         const { getScraperStatus } = await import("./scrapers/scraperIntegration");
@@ -118,6 +130,7 @@ export const appRouter = router({
       } catch (error) {
         console.error("Error getting scraper status:", error);
         return {
+          jsonFileExists: false,
           message: "Error checking scraper status",
         };
       }

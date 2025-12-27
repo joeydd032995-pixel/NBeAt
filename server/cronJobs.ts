@@ -1,8 +1,8 @@
+import cron, { ScheduledTask } from "node-cron";
 import { performDataSync } from "./dataSyncService";
 
 /**
  * Cron job configuration for automated tasks
- * These should be triggered by Vercel Cron or external scheduler
  */
 
 interface CronJobConfig {
@@ -10,16 +10,18 @@ interface CronJobConfig {
   schedule: string; // Cron expression
   handler: () => Promise<void>;
   enabled: boolean;
+  task?: ScheduledTask;
 }
 
 /**
- * Daily data refresh job - runs at 6 AM CST
+ * Daily data refresh job - runs at 6 AM CST (12:00 UTC)
  */
 export const dailyDataRefreshJob: CronJobConfig = {
   name: "daily-data-refresh",
-  schedule: "0 6 * * *", // 6 AM every day
+  schedule: "0 12 * * *", // 12:00 UTC = 6 AM CST
   handler: async () => {
-    console.log("[CronJob] Starting daily data refresh...");
+    console.log("[CronJob] Starting daily data refresh from NBA API...");
+    console.log("[CronJob] Time:", new Date().toISOString());
     try {
       const result = await performDataSync();
       if (result.success) {
@@ -48,7 +50,6 @@ export const evOpportunityDetectionJob: CronJobConfig = {
       
       if (opportunities.length > 0) {
         console.log(`[CronJob] Found ${opportunities.length} high-EV opportunities`);
-        // Notifications will be sent by the detection service
       } else {
         console.log("[CronJob] No high-EV opportunities found");
       }
@@ -60,11 +61,11 @@ export const evOpportunityDetectionJob: CronJobConfig = {
 };
 
 /**
- * Bankroll health check job - runs daily at 8 AM CST
+ * Bankroll health check job - runs daily at 8 AM CST (14:00 UTC)
  */
 export const bankrollHealthCheckJob: CronJobConfig = {
   name: "bankroll-health-check",
-  schedule: "0 8 * * *", // 8 AM every day
+  schedule: "0 14 * * *", // 14:00 UTC = 8 AM CST
   handler: async () => {
     console.log("[CronJob] Starting bankroll health check...");
     try {
@@ -81,23 +82,66 @@ export const bankrollHealthCheckJob: CronJobConfig = {
   enabled: true,
 };
 
+// Store all job configs
+const allJobs: CronJobConfig[] = [
+  dailyDataRefreshJob,
+  evOpportunityDetectionJob,
+  bankrollHealthCheckJob,
+];
+
+/**
+ * Initialize all cron jobs with node-cron
+ */
+export function initCronJobs(): void {
+  console.log("[CronJob] Initializing scheduled jobs...");
+  
+  for (const job of allJobs) {
+    if (!job.enabled) continue;
+    
+    // Stop existing task if any
+    if (job.task) {
+      job.task.stop();
+    }
+    
+    // Schedule new task
+    job.task = cron.schedule(job.schedule, job.handler, {
+      timezone: "UTC"
+    });
+    
+    console.log(`[CronJob] Scheduled: ${job.name} (${job.schedule})`);
+  }
+  
+  console.log("[CronJob] All jobs initialized");
+}
+
+/**
+ * Stop all cron jobs
+ */
+export function stopCronJobs(): void {
+  console.log("[CronJob] Stopping all scheduled jobs...");
+  
+  for (const job of allJobs) {
+    if (job.task) {
+      job.task.stop();
+      job.task = undefined;
+    }
+  }
+  
+  console.log("[CronJob] All jobs stopped");
+}
+
 /**
  * Get all enabled cron jobs
  */
 export function getEnabledCronJobs(): CronJobConfig[] {
-  return [
-    dailyDataRefreshJob,
-    evOpportunityDetectionJob,
-    bankrollHealthCheckJob,
-  ].filter((job) => job.enabled);
+  return allJobs.filter((job) => job.enabled);
 }
 
 /**
  * Execute a cron job manually
  */
 export async function executeCronJob(jobName: string): Promise<boolean> {
-  const jobs = getEnabledCronJobs();
-  const job = jobs.find((j) => j.name === jobName);
+  const job = allJobs.find((j) => j.name === jobName);
   
   if (!job) {
     console.error(`[CronJob] Job not found: ${jobName}`);
@@ -112,4 +156,21 @@ export async function executeCronJob(jobName: string): Promise<boolean> {
     console.error(`[CronJob] Error executing ${jobName}:`, error);
     return false;
   }
+}
+
+/**
+ * Get cron job status
+ */
+export function getCronJobStatus(): Array<{
+  name: string;
+  schedule: string;
+  enabled: boolean;
+  isRunning: boolean;
+}> {
+  return allJobs.map((job) => ({
+    name: job.name,
+    schedule: job.schedule,
+    enabled: job.enabled,
+    isRunning: job.task !== undefined,
+  }));
 }

@@ -3,72 +3,83 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Loader2, Database, Zap, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DataSync() {
-  const [syncInProgress, setSyncInProgress] = useState(false);
-  const [populatingStats, setPopulatingStats] = useState(false);
-  const [scrapingRealStats, setScrapingRealStats] = useState(false);
+  const [refreshingStats, setRefreshingStats] = useState(false);
+  const [forceRefreshing, setForceRefreshing] = useState(false);
+  const [syncingRosters, setSyncingRosters] = useState(false);
 
-  const { data: syncStatus, refetch } = trpc.nba.getSyncStatus.useQuery();
+  const { data: syncStatus, refetch: refetchSyncStatus } = trpc.nba.getSyncStatus.useQuery();
+  const { data: scraperStatus, refetch: refetchScraperStatus } = trpc.nba.getScraperStatus.useQuery();
 
-  const syncMutation = trpc.nba.syncData.useMutation({
+  // Quick refresh - uses cached JSON file first, then NBA API
+  const refreshStatsMutation = trpc.nba.scrapeRealStats.useMutation({
     onSuccess: (data) => {
-      setSyncInProgress(false);
-      toast.success(`Data sync complete! ${data.playersCount} players, ${data.teamsCount} teams`);
-      refetch();
-    },
-    onError: () => {
-      setSyncInProgress(false);
-      toast.error("Data sync failed. Please try again.");
-    },
-  });
-
-  const populateStatsMutation = trpc.nba.populateStats.useMutation({
-    onSuccess: (data) => {
-      setPopulatingStats(false);
-      toast.success(`Stats populated! ${data.updated} players updated with accurate 2025-26 season data`);
-      refetch();
-    },
-    onError: () => {
-      setPopulatingStats(false);
-      toast.error("Stats population failed. Please try again.");
-    },
-  });
-
-  const scrapeRealStatsMutation = trpc.nba.scrapeRealStats.useMutation({
-    onSuccess: (data) => {
-      setScrapingRealStats(false);
+      setRefreshingStats(false);
       if (data.success) {
-        toast.success(`Real stats scraped! ${data.playersCount} players updated from Basketball Reference (${data.source} scraper)`);
-        refetch();
+        toast.success(`Stats updated! ${data.playersCount} players refreshed (source: ${data.source})`);
+        refetchSyncStatus();
+        refetchScraperStatus();
       } else {
-        toast.error(`Scraping failed: ${data.error}`);
+        toast.error(`Update failed: ${data.error}`);
       }
     },
     onError: (error) => {
-      setScrapingRealStats(false);
-      toast.error(`Scraping error: ${error.message}`);
+      setRefreshingStats(false);
+      toast.error(`Error: ${error.message}`);
     },
   });
 
-  const { data: scraperStatus } = trpc.nba.getScraperStatus.useQuery();
+  // Force refresh - bypasses cache, fetches fresh from NBA API
+  const forceRefreshMutation = trpc.nba.forceRefreshStats.useMutation({
+    onSuccess: (data) => {
+      setForceRefreshing(false);
+      if (data.success) {
+        toast.success(`Fresh stats fetched! ${data.playersCount} players updated from NBA API`);
+        refetchSyncStatus();
+        refetchScraperStatus();
+      } else {
+        toast.error(`Force refresh failed: ${data.error}`);
+      }
+    },
+    onError: (error) => {
+      setForceRefreshing(false);
+      toast.error(`Error: ${error.message}`);
+    },
+  });
 
-  const handleSync = async () => {
-    setSyncInProgress(true);
-    syncMutation.mutate();
+  // Sync rosters from ESPN (gets team rosters + matches with real stats)
+  const syncRostersMutation = trpc.nba.syncData.useMutation({
+    onSuccess: (data) => {
+      setSyncingRosters(false);
+      toast.success(`Roster sync complete! ${data.playersCount} players, ${data.teamsCount} teams`);
+      refetchSyncStatus();
+      refetchScraperStatus();
+    },
+    onError: () => {
+      setSyncingRosters(false);
+      toast.error("Roster sync failed. Please try again.");
+    },
+  });
+
+  const handleRefreshStats = () => {
+    setRefreshingStats(true);
+    refreshStatsMutation.mutate();
   };
 
-  const handlePopulateStats = async () => {
-    setPopulatingStats(true);
-    populateStatsMutation.mutate();
+  const handleForceRefresh = () => {
+    setForceRefreshing(true);
+    forceRefreshMutation.mutate();
   };
 
-  const handleScrapeRealStats = async () => {
-    setScrapingRealStats(true);
-    scrapeRealStatsMutation.mutate();
+  const handleSyncRosters = () => {
+    setSyncingRosters(true);
+    syncRostersMutation.mutate();
   };
+
+  const isAnyLoading = refreshingStats || forceRefreshing || syncingRosters;
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,138 +97,136 @@ export default function DataSync() {
               DATA SYNCHRONIZATION
             </h1>
             <p className="text-lg text-muted-foreground">
-              Sync live 2025-26 NBA player statistics and real data
+              Real 2025-26 NBA player statistics from official NBA API
             </p>
           </div>
 
-          {/* Real Stats Scraper Card */}
+          {/* Main Refresh Card */}
           <Card className="bg-card/50 backdrop-blur border-2 border-primary/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="w-5 h-5" />
-                Real NBA Statistics (Basketball Reference)
+                <Database className="w-5 h-5" />
+                NBA Statistics Refresh
               </CardTitle>
               <CardDescription>
-                Scrape authentic 2025-26 season player stats with fallback support
+                Update player stats with real 2025-26 season data from NBA.com
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Scraper Status */}
-              <div className="space-y-4">
+              {/* Status Display */}
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                  <CheckCircle className="w-6 h-6 text-primary" />
+                  {scraperStatus?.jsonFileExists ? (
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-yellow-500" />
+                  )}
                   <div>
-                    <p className="font-semibold">Scraper Status</p>
+                    <p className="font-semibold">Data Source</p>
                     <p className="text-sm text-muted-foreground">
-                      {scraperStatus?.message || "Loading status..."}
+                      {scraperStatus?.jsonPlayerCount 
+                        ? `${scraperStatus.jsonPlayerCount} players in cache`
+                        : "No cached data"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+                  {(scraperStatus?.playerCount ?? 0) > 0 ? (
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-yellow-500" />
+                  )}
+                  <div>
+                    <p className="font-semibold">Database</p>
+                    <p className="text-sm text-muted-foreground">
+                      {scraperStatus?.playerCount 
+                        ? `${scraperStatus.playerCount} players with stats`
+                        : "No player stats"}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Scrape Button */}
+              {/* Primary Action - Quick Refresh */}
               <Button
-                onClick={handleScrapeRealStats}
-                disabled={scrapingRealStats || scrapeRealStatsMutation.isPending}
+                onClick={handleRefreshStats}
+                disabled={isAnyLoading}
                 className="w-full py-6 text-lg bg-gradient-to-r from-primary to-secondary hover:opacity-90"
               >
-                {scrapingRealStats || scrapeRealStatsMutation.isPending ? (
+                {refreshingStats ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Scraping Real Stats (Node.js/Python)...
+                    Updating Stats...
                   </>
                 ) : (
                   <>
                     <RefreshCw className="w-5 h-5 mr-2" />
-                    Scrape Real NBA Stats Now
+                    Refresh Player Stats
                   </>
                 )}
               </Button>
+
+              {/* Secondary Actions */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button
+                  onClick={handleForceRefresh}
+                  disabled={isAnyLoading}
+                  variant="outline"
+                  className="py-4"
+                >
+                  {forceRefreshing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Fetching from NBA API...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 mr-2" />
+                      Force Fresh Data
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleSyncRosters}
+                  disabled={isAnyLoading}
+                  variant="outline"
+                  className="py-4"
+                >
+                  {syncingRosters ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Syncing Rosters...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="w-4 h-4 mr-2" />
+                      Sync Team Rosters
+                    </>
+                  )}
+                </Button>
+              </div>
 
               {/* Info Box */}
               <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
                 <h3 className="font-semibold text-primary mb-2">How it works:</h3>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Uses Node.js scraper (primary) with Python fallback</li>
-                  <li>• Fetches real 2025-26 season stats from Basketball Reference</li>
-                  <li>• Accurate games played (15-28 games), PPG, RPG, APG, and 20+ advanced stats</li>
-                  <li>• Updates database with verified player statistics</li>
+                  <li>• <strong>Refresh Stats:</strong> Updates from cached data or fetches fresh from NBA API</li>
+                  <li>• <strong>Force Fresh:</strong> Bypasses cache, gets latest stats directly from NBA.com</li>
+                  <li>• <strong>Sync Rosters:</strong> Updates team rosters from ESPN + matches with real stats</li>
+                  <li>• All data is 100% real - no fake or generated statistics</li>
                 </ul>
               </div>
             </CardContent>
           </Card>
 
-          {/* Sync Status Card */}
-          <Card className="bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="w-5 h-5" />
-                Sync Status
-              </CardTitle>
-              <CardDescription>
-                Keep your player database up-to-date with latest statistics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Status Display */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                  {syncStatus?.needsSync ? (
-                    <AlertCircle className="w-6 h-6 text-yellow-500" />
-                  ) : (
-                    <CheckCircle className="w-6 h-6 text-primary" />
-                  )}
-                  <div>
-                    <p className="font-semibold">
-                      {syncStatus?.needsSync ? "Sync Needed" : "Up to Date"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {syncStatus?.message}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sync Button */}
-              <Button
-                onClick={handleSync}
-                disabled={syncInProgress || syncMutation.isPending}
-                className="w-full py-6 text-lg"
-              >
-                {syncInProgress || syncMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Syncing Data...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Sync NBA Data Now
-                  </>
-                )}
-              </Button>
-
-              {/* Info Box */}
-              <div className="p-4 rounded-lg bg-secondary/10 border border-secondary/30">
-                <h3 className="font-semibold text-secondary mb-2">What happens during sync?</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Fetches all NBA players from balldontlie API</li>
-                  <li>• Retrieves 2025-26 season statistics (PPG, RPG, APG, FG%)</li>
-                  <li>• Updates team roster information</li>
-                  <li>• Stores data in local database for fast access</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Data Stats Card */}
+          {/* Data Overview Card */}
           <Card className="bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle>Data Overview</CardTitle>
               <CardDescription>Current database statistics</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="text-center space-y-2">
                   <div className="text-3xl font-bold text-primary neon-glow-pink">
                     30
@@ -226,9 +235,15 @@ export default function DataSync() {
                 </div>
                 <div className="text-center space-y-2">
                   <div className="text-3xl font-bold text-secondary neon-glow-blue">
-                    500+
+                    {scraperStatus?.jsonPlayerCount || "500+"}
                   </div>
                   <div className="text-sm text-muted-foreground">Players</div>
+                </div>
+                <div className="text-center space-y-2">
+                  <div className="text-3xl font-bold text-accent">
+                    32
+                  </div>
+                  <div className="text-sm text-muted-foreground">Max Games</div>
                 </div>
               </div>
             </CardContent>
@@ -237,15 +252,18 @@ export default function DataSync() {
           {/* Schedule Info */}
           <Card className="bg-card/50 backdrop-blur border-accent/50">
             <CardHeader>
-              <CardTitle className="text-accent">Automated Daily Refresh</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-accent">
+                <Clock className="w-5 h-5" />
+                Automated Daily Refresh
+              </CardTitle>
               <CardDescription>
-                Your data is automatically refreshed daily at 6 AM CST
+                Stats are automatically refreshed daily at 6 AM CST
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                The platform will automatically sync the latest NBA statistics every 24 hours. 
-                You can also manually trigger a sync at any time using the buttons above.
+                The platform automatically syncs the latest NBA statistics every 24 hours after games complete. 
+                Use the buttons above to manually refresh at any time for the most current data.
               </p>
             </CardContent>
           </Card>
