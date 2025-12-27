@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
 import { 
   ArrowLeft, 
@@ -18,9 +20,27 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Zap
+  Zap,
+  Search,
+  User,
+  ChevronsUpDown,
+  Check,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { GameSelector } from "@/components/GameSelector";
+
+interface Player {
+  id: number;
+  fullName: string;
+  position: string | null;
+  ppg: string | null;
+  minutesPerGame: string | null;
+  rpg: string | null;
+  apg: string | null;
+  teamId: number | null;
+}
 
 interface AnalysisResult {
   success: boolean;
@@ -53,10 +73,31 @@ interface AnalysisResult {
   error?: string;
 }
 
+interface SelectedGame {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  gameTime: string;
+  displayTime: string;
+  displayDate: string;
+  spread: { home: number | null; away: number | null } | null;
+  total: number | null;
+  moneyline: { home: number; away: number } | null;
+}
+
 export default function PropsAnalytics() {
   const [activeTab, setActiveTab] = useState("quick");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+
+  // Game Selection State
+  const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
+
+  // Player Search State
+  const [playerSearchOpen, setPlayerSearchOpen] = useState(false);
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [positionFilter, setPositionFilter] = useState<string>("all");
 
   // Quick Analysis Form State
   const [playerName, setPlayerName] = useState("");
@@ -78,6 +119,58 @@ export default function PropsAnalytics() {
   // Edge Calculator Form State
   const [projection, setProjection] = useState("");
   const [edgeLine, setEdgeLine] = useState("");
+
+  // Fetch players with search and position filter
+  const { data: players = [], isLoading: playersLoading } = trpc.nba.searchPlayers.useQuery({
+    search: playerSearchQuery,
+    position: positionFilter === "all" ? undefined : positionFilter,
+    limit: 100,
+  }, {
+    enabled: true,
+  });
+
+  // Fetch all teams for reference
+  const { data: teams = [] } = trpc.nba.getAllTeams.useQuery();
+
+  // Create team lookup map
+  const teamMap = useMemo(() => {
+    const map = new Map<number, string>();
+    teams.forEach(team => map.set(team.id, team.abbr));
+    return map;
+  }, [teams]);
+
+  // Auto-populate form when player is selected
+  useEffect(() => {
+    if (selectedPlayer) {
+      setPlayerName(selectedPlayer.fullName);
+      setSeasonPpg(selectedPlayer.ppg || "");
+      setAvgMinutes(selectedPlayer.minutesPerGame || "");
+      
+      // Set position for prop-specific analysis
+      if (selectedPlayer.position) {
+        const pos = selectedPlayer.position.split("-")[0].toUpperCase();
+        if (["PG", "SG", "SF", "PF", "C"].includes(pos)) {
+          setPosition(pos as typeof position);
+        }
+      }
+    }
+  }, [selectedPlayer]);
+
+  // Auto-populate game data when a game is selected
+  useEffect(() => {
+    if (selectedGame) {
+      // Set total from game odds
+      if (selectedGame.total) {
+        setTotal(selectedGame.total.toString());
+      }
+      // Set spread from game odds
+      if (selectedGame.spread?.home !== null) {
+        setSpread(Math.abs(selectedGame.spread.home).toString());
+        // If home team is favored (negative spread), set isFavorite based on context
+        setIsFavorite(selectedGame.spread.home < 0);
+      }
+    }
+  }, [selectedGame]);
 
   const fullAnalysisMutation = trpc.propsAnalytics.fullAnalysis.useMutation({
     onSuccess: (data) => {
@@ -203,6 +296,15 @@ export default function PropsAnalytics() {
     }
   };
 
+  const clearSelection = () => {
+    setSelectedPlayer(null);
+    setPlayerName("");
+    setSeasonPpg("");
+    setAvgMinutes("");
+    setLine("");
+    setResult(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8">
@@ -223,6 +325,30 @@ export default function PropsAnalytics() {
             </p>
           </div>
 
+          {/* Game Selection Section */}
+          <div className="mb-8">
+            <GameSelector 
+              onGameSelect={(game) => setSelectedGame(game)}
+              selectedGameId={selectedGame?.id}
+              showOdds={true}
+            />
+            {selectedGame && (
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 text-purple-700">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-medium">Selected Game:</span>
+                  <span>{selectedGame.awayTeam} @ {selectedGame.homeTeam}</span>
+                  <span className="text-purple-500">• {selectedGame.displayTime}</span>
+                </div>
+                {selectedGame.total && (
+                  <p className="text-sm text-purple-600 mt-1">
+                    O/U: {selectedGame.total} | Spread auto-populated to analysis form
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Input Panel */}
             <Card className="bg-card/50 backdrop-blur border-2 border-primary/30">
@@ -232,7 +358,7 @@ export default function PropsAnalytics() {
                   Analysis Tools
                 </CardTitle>
                 <CardDescription>
-                  Enter player data to generate projections and betting recommendations
+                  Select a game above, then pick a player to auto-populate stats
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -245,6 +371,123 @@ export default function PropsAnalytics() {
 
                   {/* Full Analysis Tab */}
                   <TabsContent value="quick" className="space-y-4 mt-4">
+                    {/* Player Search Section */}
+                    <div className="space-y-3 p-4 bg-background/50 rounded-lg border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Select Player
+                        </Label>
+                        {selectedPlayer && (
+                          <Button variant="ghost" size="sm" onClick={clearSelection}>
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Position Filter */}
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          variant={positionFilter === "all" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPositionFilter("all")}
+                        >
+                          All
+                        </Button>
+                        {["PG", "SG", "SF", "PF", "C"].map((pos) => (
+                          <Button
+                            key={pos}
+                            variant={positionFilter === pos ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPositionFilter(pos)}
+                          >
+                            {pos}
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* Player Combobox */}
+                      <Popover open={playerSearchOpen} onOpenChange={setPlayerSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={playerSearchOpen}
+                            className="w-full justify-between h-12"
+                          >
+                            {selectedPlayer ? (
+                              <span className="flex items-center gap-2">
+                                <span className="font-medium">{selectedPlayer.fullName}</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {selectedPlayer.position} • {selectedPlayer.ppg} PPG
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground flex items-center gap-2">
+                                <Search className="w-4 h-4" />
+                                Search for a player...
+                              </span>
+                            )}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput 
+                              placeholder="Type player name..." 
+                              value={playerSearchQuery}
+                              onValueChange={setPlayerSearchQuery}
+                            />
+                            <CommandList>
+                              {playersLoading ? (
+                                <div className="py-6 text-center text-sm">
+                                  <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
+                                  Loading players...
+                                </div>
+                              ) : players.length === 0 ? (
+                                <CommandEmpty>No players found.</CommandEmpty>
+                              ) : (
+                                <CommandGroup heading={`${players.length} players`}>
+                                  {players.map((player) => (
+                                    <CommandItem
+                                      key={player.id}
+                                      value={player.fullName}
+                                      onSelect={() => {
+                                        setSelectedPlayer(player as Player);
+                                        setPlayerSearchOpen(false);
+                                      }}
+                                      className="cursor-pointer"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedPlayer?.id === player.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{player.fullName}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {player.position || "N/A"} • {player.ppg || "0"} PPG • {player.minutesPerGame || "0"} MPG
+                                          {player.teamId && teamMap.get(player.teamId) && ` • ${teamMap.get(player.teamId)}`}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+
+                      {selectedPlayer && (
+                        <div className="text-xs text-muted-foreground bg-primary/10 p-2 rounded">
+                          ✓ Stats auto-populated from database
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats Fields */}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="playerName">Player Name *</Label>
@@ -253,6 +496,7 @@ export default function PropsAnalytics() {
                           placeholder="e.g., LeBron James"
                           value={playerName}
                           onChange={(e) => setPlayerName(e.target.value)}
+                          className={selectedPlayer ? "bg-primary/5 border-primary/30" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -264,6 +508,7 @@ export default function PropsAnalytics() {
                           placeholder="e.g., 25.5"
                           value={seasonPpg}
                           onChange={(e) => setSeasonPpg(e.target.value)}
+                          className={selectedPlayer ? "bg-primary/5 border-primary/30" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -275,6 +520,7 @@ export default function PropsAnalytics() {
                           placeholder="e.g., 35.2"
                           value={avgMinutes}
                           onChange={(e) => setAvgMinutes(e.target.value)}
+                          className={selectedPlayer ? "bg-primary/5 border-primary/30" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -502,165 +748,165 @@ export default function PropsAnalytics() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {!result ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Enter player data and run analysis to see results</p>
-                  </div>
-                ) : !result.success ? (
-                  <div className="text-center py-12 text-red-500">
-                    <XCircle className="w-12 h-12 mx-auto mb-4" />
-                    <p>Analysis failed: {result.error}</p>
+                {result ? (
+                  <div className="space-y-6">
+                    {result.success ? (
+                      <>
+                        {/* Main Projection */}
+                        {result.final_projection !== undefined && (
+                          <div className="text-center p-6 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
+                            <div className="text-sm text-muted-foreground mb-1">Projected Points</div>
+                            <div className="text-5xl font-bold text-primary">
+                              {result.final_projection.toFixed(1)}
+                            </div>
+                            {result.line && (
+                              <div className="text-sm text-muted-foreground mt-2">
+                                vs Line: {result.line}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Recommendation */}
+                        {result.recommendation && (
+                          <div className="flex items-center justify-center gap-3 p-4 bg-background/50 rounded-lg">
+                            {getRecommendationIcon(result.recommendation)}
+                            <span className={`text-2xl font-bold ${getRecommendationColor(result.recommendation)}`}>
+                              {result.recommendation.replace("_", " ")}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Edge & Confidence */}
+                        {(result.edge !== undefined || result.confidence !== undefined) && (
+                          <div className="grid grid-cols-2 gap-4">
+                            {result.edge !== undefined && (
+                              <div className="p-4 bg-background/50 rounded-lg text-center">
+                                <div className="text-sm text-muted-foreground">Edge</div>
+                                <div className={`text-2xl font-bold ${result.edge > 0 ? "text-green-500" : "text-red-500"}`}>
+                                  {result.edge > 0 ? "+" : ""}{result.edge.toFixed(1)}
+                                </div>
+                              </div>
+                            )}
+                            {result.confidence !== undefined && (
+                              <div className="p-4 bg-background/50 rounded-lg text-center">
+                                <div className="text-sm text-muted-foreground">Confidence</div>
+                                <div className="text-2xl font-bold text-secondary">
+                                  {(result.confidence * 100).toFixed(0)}%
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Projection Breakdown */}
+                        {(result.base_projection || result.context_adjusted || result.rest_adjusted) && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">Projection Breakdown</div>
+                            <div className="space-y-1 text-sm">
+                              {result.base_projection && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Base Projection</span>
+                                  <span>{result.base_projection.toFixed(1)}</span>
+                                </div>
+                              )}
+                              {result.context_adjusted && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Context Adjusted</span>
+                                  <span>{result.context_adjusted.toFixed(1)}</span>
+                                </div>
+                              )}
+                              {result.rest_adjusted && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Rest Adjusted</span>
+                                  <span>{result.rest_adjusted.toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Monte Carlo Results */}
+                        {result.monte_carlo && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">Monte Carlo Simulation</div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div className="p-2 bg-green-500/10 rounded">
+                                <div className="text-muted-foreground">P(Over)</div>
+                                <div className="font-bold text-green-500">
+                                  {(result.monte_carlo.p_over * 100).toFixed(1)}%
+                                </div>
+                              </div>
+                              <div className="p-2 bg-red-500/10 rounded">
+                                <div className="text-muted-foreground">P(Under)</div>
+                                <div className="font-bold text-red-500">
+                                  {(result.monte_carlo.p_under * 100).toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              90% CI: {result.monte_carlo.p5.toFixed(1)} - {result.monte_carlo.p95.toFixed(1)}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Factors Applied */}
+                        {result.factors_applied && result.factors_applied.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">Factors Applied</div>
+                            <div className="flex flex-wrap gap-2">
+                              {result.factors_applied.map((factor, i) => (
+                                <span key={i} className="px-2 py-1 bg-primary/10 rounded text-xs">
+                                  {factor}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center p-6 text-red-500">
+                        <XCircle className="w-12 h-12 mx-auto mb-4" />
+                        <div className="font-medium">Analysis Failed</div>
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {result.error || "Unknown error occurred"}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* Main Projection */}
-                    {result.final_projection !== undefined && (
-                      <div className="text-center p-6 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {result.player_name || "Player"} Projection
-                        </p>
-                        <p className="text-5xl font-bold text-primary neon-glow-pink">
-                          {result.final_projection?.toFixed(1)}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          vs Line: {result.line}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Edge & Recommendation */}
-                    {result.edge !== undefined && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 rounded-lg bg-muted/50 text-center">
-                          <p className="text-sm text-muted-foreground">Edge</p>
-                          <p className={`text-2xl font-bold ${result.edge >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {result.edge >= 0 ? '+' : ''}{result.edge?.toFixed(1)}
-                          </p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-muted/50 text-center">
-                          <p className="text-sm text-muted-foreground">Recommendation</p>
-                          <div className="flex items-center justify-center gap-2 mt-1">
-                            {getRecommendationIcon(result.recommendation || "PASS")}
-                            <p className={`text-xl font-bold ${getRecommendationColor(result.recommendation || "PASS")}`}>
-                              {result.recommendation}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Confidence & EV */}
-                    {result.confidence !== undefined && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 rounded-lg bg-muted/50 text-center">
-                          <p className="text-sm text-muted-foreground">Confidence</p>
-                          <p className="text-xl font-bold">
-                            {(result.confidence * 100).toFixed(0)}%
-                          </p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-muted/50 text-center">
-                          <p className="text-sm text-muted-foreground">Expected Value</p>
-                          <p className={`text-xl font-bold ${(result.expected_value || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {(result.expected_value || 0) >= 0 ? '+' : ''}{result.expected_value?.toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Projection Breakdown */}
-                    {result.base_projection !== undefined && (
-                      <div className="p-4 rounded-lg bg-muted/30 space-y-2">
-                        <p className="text-sm font-semibold text-muted-foreground">Projection Breakdown</p>
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Base</p>
-                            <p className="font-medium">{result.base_projection?.toFixed(1)}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Context Adj</p>
-                            <p className="font-medium">{result.context_adjusted?.toFixed(1)}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Final</p>
-                            <p className="font-medium text-primary">{result.rest_adjusted?.toFixed(1)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Monte Carlo Results */}
-                    {result.monte_carlo && (
-                      <div className="p-4 rounded-lg bg-muted/30 space-y-2">
-                        <p className="text-sm font-semibold text-muted-foreground">Monte Carlo Simulation</p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center">
-                            <p className="text-sm text-muted-foreground">P(Over)</p>
-                            <p className="text-lg font-bold text-green-500">
-                              {(result.monte_carlo.p_over * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm text-muted-foreground">P(Under)</p>
-                            <p className="text-lg font-bold text-red-500">
-                              {(result.monte_carlo.p_under * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center">
-                          95% Range: {result.monte_carlo.p5?.toFixed(1)} - {result.monte_carlo.p95?.toFixed(1)}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Factors Applied */}
-                    {result.factors_applied && result.factors_applied.length > 0 && (
-                      <div className="p-4 rounded-lg bg-muted/30">
-                        <p className="text-sm font-semibold text-muted-foreground mb-2">Factors Applied</p>
-                        <div className="flex flex-wrap gap-2">
-                          {result.factors_applied.map((factor, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary"
-                            >
-                              {factor}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="text-center p-12 text-muted-foreground">
+                    <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p>Enter player data and run analysis to see results</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Info Card */}
-          <Card className="bg-card/50 backdrop-blur">
+          {/* Info Section */}
+          <Card className="bg-card/30 backdrop-blur">
             <CardHeader>
-              <CardTitle>About Props Analytics</CardTitle>
+              <CardTitle className="text-lg">About Props Analytics</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="p-4 rounded-lg bg-muted/30">
-                  <h3 className="font-semibold text-primary mb-2">60+ Formulas</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Comprehensive analytics including base projections, game context, 
-                    rest impact, variance analysis, and Monte Carlo simulations.
+              <div className="grid md:grid-cols-3 gap-6 text-sm">
+                <div>
+                  <h4 className="font-medium mb-2">60+ Formulas</h4>
+                  <p className="text-muted-foreground">
+                    Comprehensive analytics including base projections, game context, rest impact, variance analysis, and Monte Carlo simulations.
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/30">
-                  <h3 className="font-semibold text-secondary mb-2">Edge Detection</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Identify profitable betting opportunities by comparing your 
-                    projections against sportsbook lines with confidence ratings.
+                <div>
+                  <h4 className="font-medium mb-2">Edge Detection</h4>
+                  <p className="text-muted-foreground">
+                    Identify profitable betting opportunities by comparing your projections against sportsbook lines with confidence ratings.
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/30">
-                  <h3 className="font-semibold text-accent mb-2">Multi-Prop Support</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Analyze points, assists, rebounds, steals, blocks, and 3-pointers 
-                    with position-based projections.
+                <div>
+                  <h4 className="font-medium mb-2">Multi-Prop Support</h4>
+                  <p className="text-muted-foreground">
+                    Analyze points, assists, rebounds, steals, blocks, and 3-pointers with position-based projections.
                   </p>
                 </div>
               </div>

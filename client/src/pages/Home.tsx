@@ -9,10 +9,10 @@ import {
   Wallet, 
   LineChart,
   MessageSquare,
-  Shield,
   Activity,
   AlertCircle,
-  Bell
+  Bell,
+  Zap
 } from "lucide-react";
 
 export default function Home() {
@@ -22,6 +22,13 @@ export default function Home() {
       description: "Live 2025-26 NBA player statistics (PPG, RPG, APG, FG%)",
       icon: TrendingUp,
       href: "/player-stats",
+      color: "text-primary"
+    },
+    {
+      title: "Props Analytics",
+      description: "60+ analytical formulas for player prop projections with auto-populated stats",
+      icon: Zap,
+      href: "/props-analytics",
       color: "text-primary"
     },
     {
@@ -53,13 +60,6 @@ export default function Home() {
       color: "text-secondary"
     },
     {
-      title: "Prop Analyzer",
-      description: "Player prop bets with historical hit rates and AI recommendations",
-      icon: Activity,
-      href: "/prop-analyzer",
-      color: "text-primary"
-    },
-    {
       title: "Injury Report",
       description: "Real-time NBA injury updates to factor into betting decisions",
       icon: AlertCircle,
@@ -75,28 +75,7 @@ export default function Home() {
     },
     {
       title: "Parlay Builder",
-      description: "Build multi-leg parlays and calculate potential payouts",
-      icon: Calculator,
-      href: "/parlay-builder",
-      color: "text-primary"
-    },
-    {
-      title: "AI Assistant",
-      description: "Get AI-powered insights with access to all platform data",
-      icon: MessageSquare,
-      href: "/ai-assistant",
-      color: "text-secondary"
-    },
-    {
-      title: "Data Sync",
-      description: "Sync live NBA player statistics from Basketball Reference",
-      icon: Shield,
-      href: "/data-sync",
-      color: "text-accent"
-    },
-    {
-      title: "Parlay Builder",
-      description: "Generate structured tickets 1-9 (Floor, Sharp Spread, Core Over, Chaos)",
+      description: "Build multi-leg parlays with structured tickets (Floor, Sharp, Core, Chaos)",
       icon: Calculator,
       href: "/parlay-builder",
       color: "text-primary"

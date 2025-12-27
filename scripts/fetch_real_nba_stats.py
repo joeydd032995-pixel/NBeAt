@@ -64,6 +64,7 @@ def fetch_real_nba_stats():
                     'position': player_data.get('PLAYER_POSITION', 'G'),
                     'team': player_data.get('TEAM_ABBREVIATION', 'UNK'),
                     'gamesPlayed': games_played,
+                    'mpg': float(player_data.get('MIN', 0) or 0),  # Minutes per game
                     'ppg': float(player_data.get('PTS', 0) or 0),
                     'rpg': float(player_data.get('REB', 0) or 0),
                     'apg': float(player_data.get('AST', 0) or 0),
@@ -82,6 +83,8 @@ def fetch_real_nba_stats():
                     'bpg': float(player_data.get('BLK', 0) or 0),
                     'topg': float(player_data.get('TOV', 0) or 0),
                     'pfpg': float(player_data.get('PF', 0) or 0),
+                    'plusMinus': float(player_data.get('PLUS_MINUS', 0) or 0),  # Plus/Minus
+                    'age': int(player_data.get('AGE', 0) or 0),  # Player age
                 }
                 
                 # Calculate advanced stats

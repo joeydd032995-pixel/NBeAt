@@ -1,25 +1,18 @@
 import { useState, useMemo } from "react";
-import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, TrendingUp, Flame, Snowflake, Activity } from "lucide-react";
+import { TrendingUp, Flame, Snowflake, Activity } from "lucide-react";
+import { PlayerSearchDropdown, Player } from "@/components/PlayerSearchDropdown";
 
-interface PlayerStats {
-  id: number;
-  fullName: string;
-  position: string;
-  gamesPlayed: number;
-  ppg: number;
-  rpg: number;
-  apg: number;
-}
+interface PlayerStats extends Player {}
 
 function generateGameData(player: PlayerStats) {
   const games = [];
+  const ppg = parseFloat(player.ppg) || 0;
+  const rpg = parseFloat(player.rpg) || 0;
+  const apg = parseFloat(player.apg) || 0;
   for (let i = 0; i < Math.min(player.gamesPlayed, 10); i++) {
     const rf = () => 1 + (Math.random() - 0.5) * 0.6;
-    games.push({ game: i + 1, pts: Math.round(player.ppg * rf()), reb: Math.round(player.rpg * rf()), ast: Math.round(player.apg * rf()) });
+    games.push({ game: i + 1, pts: Math.round(ppg * rf()), reb: Math.round(rpg * rf()), ast: Math.round(apg * rf()) });
   }
   return games;
 }
@@ -32,18 +25,18 @@ function HotCold({ recent, season }: { recent: number; season: number }) {
 }
 
 export default function StatTrends() {
-  const [name, setName] = useState("");
-  const [searched, setSearched] = useState("");
-  const q = trpc.nba.getPlayerByName.useQuery({ name: searched }, { enabled: searched.length > 0 });
-  const player = q.data as PlayerStats | null;
+  const [player, setPlayer] = useState<PlayerStats | null>(null);
   const games = useMemo(() => player ? generateGameData(player) : [], [player]);
   const last5 = games.slice(-5);
   const ptsAvg = last5.length ? last5.reduce((s, g) => s + g.pts, 0) / last5.length : 0;
   const rebAvg = last5.length ? last5.reduce((s, g) => s + g.reb, 0) / last5.length : 0;
   const astAvg = last5.length ? last5.reduce((s, g) => s + g.ast, 0) / last5.length : 0;
-  const maxP = Math.max(...games.map(g => g.pts), player?.ppg || 30);
-  const maxR = Math.max(...games.map(g => g.reb), player?.rpg || 10);
-  const maxA = Math.max(...games.map(g => g.ast), player?.apg || 10);
+  const ppg = parseFloat(player?.ppg || "0") || 30;
+  const rpg = parseFloat(player?.rpg || "0") || 10;
+  const apg = parseFloat(player?.apg || "0") || 10;
+  const maxP = Math.max(...games.map(g => g.pts), ppg);
+  const maxR = Math.max(...games.map(g => g.reb), rpg);
+  const maxA = Math.max(...games.map(g => g.ast), apg);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
@@ -54,9 +47,14 @@ export default function StatTrends() {
         </div>
         <Card className="bg-slate-800/50 border-purple-500/30 mb-8">
           <CardContent className="pt-6">
-            <div className="flex gap-4 max-w-xl mx-auto">
-              <Input placeholder="Enter player name..." value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && setSearched(name.trim())} className="bg-slate-900/50 border-purple-500/30 text-white" />
-              <Button onClick={() => setSearched(name.trim())} className="bg-purple-600 hover:bg-purple-700"><Search className="w-4 h-4 mr-2" />Analyze</Button>
+            <div className="max-w-xl mx-auto">
+              <PlayerSearchDropdown
+                onPlayerSelect={(p) => setPlayer(p as PlayerStats)}
+                selectedPlayer={player}
+                placeholder="Search for any NBA player..."
+                showPositionFilter={true}
+                accentColor="purple"
+              />
             </div>
           </CardContent>
         </Card>
@@ -67,10 +65,10 @@ export default function StatTrends() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-pink-400">{player.fullName}</h2>
-                    <p className="text-gray-400">{player.position} | {player.gamesPlayed} games</p>
+                    <p className="text-gray-400">{player.position} | {player.gamesPlayed} games | {player.minutesPerGame} MPG</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-cyan-400">{player.ppg}</p>
+                    <p className="text-3xl font-bold text-cyan-400">{ppg}</p>
                     <p className="text-gray-400 text-sm">Season PPG</p>
                   </div>
                 </div>
@@ -81,39 +79,39 @@ export default function StatTrends() {
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Points</span>
-                    <HotCold recent={ptsAvg} season={player.ppg} />
+                    <HotCold recent={ptsAvg} season={ppg} />
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-white">{ptsAvg.toFixed(1)}</span>
                     <span className="text-gray-500">last 5</span>
                   </div>
-                  <p className="text-gray-500 text-sm mt-1">Season: {player.ppg}</p>
+                  <p className="text-gray-500 text-sm mt-1">Season: {ppg}</p>
                 </CardContent>
               </Card>
               <Card className="bg-slate-800/50 border-blue-500/30">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Rebounds</span>
-                    <HotCold recent={rebAvg} season={player.rpg} />
+                    <HotCold recent={rebAvg} season={rpg} />
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-white">{rebAvg.toFixed(1)}</span>
                     <span className="text-gray-500">last 5</span>
                   </div>
-                  <p className="text-gray-500 text-sm mt-1">Season: {player.rpg}</p>
+                  <p className="text-gray-500 text-sm mt-1">Season: {rpg}</p>
                 </CardContent>
               </Card>
               <Card className="bg-slate-800/50 border-green-500/30">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Assists</span>
-                    <HotCold recent={astAvg} season={player.apg} />
+                    <HotCold recent={astAvg} season={apg} />
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-white">{astAvg.toFixed(1)}</span>
                     <span className="text-gray-500">last 5</span>
                   </div>
-                  <p className="text-gray-500 text-sm mt-1">Season: {player.apg}</p>
+                  <p className="text-gray-500 text-sm mt-1">Season: {apg}</p>
                 </CardContent>
               </Card>
             </div>
@@ -170,9 +168,9 @@ export default function StatTrends() {
               <CardHeader><CardTitle className="text-yellow-400">Betting Insight</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-gray-300">
-                  {ptsAvg > player.ppg * 1.1 ? (
+                  {ptsAvg > ppg * 1.1 ? (
                     <p className="flex items-center gap-2"><Flame className="w-4 h-4 text-orange-400" /><span><strong className="text-orange-400">{player.fullName}</strong> is HOT. Consider OVER on points prop.</span></p>
-                  ) : ptsAvg < player.ppg * 0.9 ? (
+                  ) : ptsAvg < ppg * 0.9 ? (
                     <p className="flex items-center gap-2"><Snowflake className="w-4 h-4 text-blue-400" /><span><strong className="text-blue-400">{player.fullName}</strong> is COLD. Consider UNDER on points prop.</span></p>
                   ) : (
                     <p className="flex items-center gap-2"><Activity className="w-4 h-4" /><span>{player.fullName} is performing at season average.</span></p>

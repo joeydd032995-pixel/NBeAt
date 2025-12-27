@@ -1,26 +1,22 @@
 import { useState } from "react";
 import { trpc } from "../lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { Search, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { PlayerSearchDropdown, Player } from "../components/PlayerSearchDropdown";
 
 export function PropAnalyzer() {
-  const [playerName, setPlayerName] = useState("");
-  const [searchedPlayer, setSearchedPlayer] = useState("");
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   
   const { data: analysis, isLoading } = trpc.props.analyzePlayerProps.useQuery(
-    { playerName: searchedPlayer },
-    { enabled: searchedPlayer.length > 0 }
+    { playerName: selectedPlayer?.fullName || "" },
+    { enabled: !!selectedPlayer?.fullName }
   );
   
   const { data: topOpportunities } = trpc.props.getTopOpportunities.useQuery({ limit: 10 });
   
-  const handleSearch = () => {
-    if (playerName.trim()) {
-      setSearchedPlayer(playerName.trim());
-    }
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
   };
   
   const getConfidenceBadge = (confidence: string) => {
@@ -55,25 +51,16 @@ export function PropAnalyzer() {
         <Card className="mb-8 bg-slate-900/50 border-cyan-500/30">
           <CardHeader>
             <CardTitle className="text-cyan-400">Search Player</CardTitle>
-            <CardDescription>Enter player name to analyze prop betting opportunities</CardDescription>
+            <CardDescription>Select a player to analyze prop betting opportunities</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <Input
-                placeholder="e.g., Stephen Curry"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="bg-slate-800 border-cyan-500/30 text-white"
-              />
-              <Button 
-                onClick={handleSearch}
-                className="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                Analyze
-              </Button>
-            </div>
+            <PlayerSearchDropdown
+              onPlayerSelect={handlePlayerSelect}
+              selectedPlayer={selectedPlayer}
+              placeholder="Search for any NBA player..."
+              showPositionFilter={true}
+              accentColor="cyan"
+            />
           </CardContent>
         </Card>
         

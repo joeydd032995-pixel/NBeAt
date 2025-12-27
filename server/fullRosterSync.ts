@@ -21,6 +21,7 @@ interface RealPlayerStats {
   position: string;
   team: string;
   gamesPlayed: number;
+  mpg: number;  // Minutes per game
   ppg: number;
   rpg: number;
   apg: number;
@@ -41,6 +42,8 @@ interface RealPlayerStats {
   pfpg: number;
   ts: number;
   efg: number;
+  plusMinus?: number;  // Plus/Minus
+  age?: number;  // Player age
 }
 
 /**
@@ -171,7 +174,7 @@ export async function syncFullRosters(): Promise<{
               ts: realPlayerStats.ts.toString(),
               efg: realPlayerStats.efg.toString(),
               gamesPlayed: realPlayerStats.gamesPlayed,
-              minutesPerGame: "0", // Not available in current data
+              minutesPerGame: realPlayerStats.mpg.toString(),  // Now using real MPG data
             });
           } else {
             // Player not in JSON - insert with zero stats (will be updated on next scrape)

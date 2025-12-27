@@ -1,43 +1,23 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { PlayerSearchDropdown, Player } from "@/components/PlayerSearchDropdown";
 
 export default function PlayerStats() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   // Auto-load random player on mount
   const { data: randomPlayer, isLoading: isLoadingRandom } = trpc.nba.getRandomPlayer.useQuery();
-  
-  // Search player query
-  const { data: searchResult, isLoading: isSearching } = trpc.nba.getPlayerByName.useQuery(
-    { name: searchQuery },
-    { enabled: searchQuery.length > 0 }
-  );
 
   // Set random player on load
   useEffect(() => {
     if (randomPlayer && !selectedPlayer) {
-      setSelectedPlayer(randomPlayer);
+      setSelectedPlayer(randomPlayer as Player);
     }
   }, [randomPlayer, selectedPlayer]);
 
-  // Update selected player when search result changes
-  useEffect(() => {
-    if (searchResult) {
-      setSelectedPlayer(searchResult);
-    }
-  }, [searchResult]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast.error("Please enter a player name");
-      return;
-    }
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
   };
 
   const displayPlayer = selectedPlayer;
@@ -53,25 +33,16 @@ export default function PlayerStats() {
           <p className="text-cyan-400">2025-26 Season Statistics</p>
         </div>
 
-        {/* Search Section */}
+        {/* Player Search Dropdown */}
         <div className="mb-8 p-6 border border-cyan-500/30 rounded-lg bg-slate-900/50">
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <Input
-              type="text"
-              placeholder="Enter player's full name (e.g., 'LeBron James')"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-slate-800 border-cyan-500/50 text-white placeholder-gray-400"
-            />
-            <Button
-              type="submit"
-              className="bg-pink-500 hover:bg-pink-600 text-white flex items-center gap-2"
-              disabled={isSearching}
-            >
-              {isSearching ? <Loader2 className="animate-spin" /> : <Search size={20} />}
-              Search
-            </Button>
-          </form>
+          <h3 className="text-cyan-400 font-semibold mb-4">Search Player</h3>
+          <PlayerSearchDropdown
+            onPlayerSelect={handlePlayerSelect}
+            selectedPlayer={selectedPlayer}
+            placeholder="Search for any NBA player..."
+            showPositionFilter={true}
+            accentColor="pink"
+          />
         </div>
 
         {/* Loading State */}
@@ -105,37 +76,38 @@ export default function PlayerStats() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {/* Scoring Stats */}
+              {/* Core Stats */}
               <StatCard label="PPG" value={displayPlayer.ppg} color="pink" />
               <StatCard label="RPG" value={displayPlayer.rpg} color="cyan" />
               <StatCard label="APG" value={displayPlayer.apg} color="pink" />
-              <StatCard label="FG%" value={displayPlayer.fgPct} color="cyan" />
+              <StatCard label="MPG" value={displayPlayer.minutesPerGame} color="cyan" />
 
               {/* Shooting Stats */}
-              <StatCard label="FGM" value={displayPlayer.fgm} color="pink" />
-              <StatCard label="FGA" value={displayPlayer.fga} color="cyan" />
-              <StatCard label="FT%" value={displayPlayer.ftPct} color="pink" />
-              <StatCard label="FTM" value={displayPlayer.ftm} color="cyan" />
+              <StatCard label="FG%" value={displayPlayer.fgPct} color="pink" />
+              <StatCard label="FGM" value={displayPlayer.fgm} color="cyan" />
+              <StatCard label="FGA" value={displayPlayer.fga} color="pink" />
+              <StatCard label="FT%" value={displayPlayer.ftPct} color="cyan" />
 
-              {/* Three Point Stats */}
-              <StatCard label="FTA" value={displayPlayer.fta} color="pink" />
-              <StatCard label="3P%" value={displayPlayer.tpPct} color="cyan" />
-              <StatCard label="3PM" value={displayPlayer.tpm} color="pink" />
-              <StatCard label="3PA" value={displayPlayer.tpa} color="cyan" />
+              {/* Free Throws & Three Point Stats */}
+              <StatCard label="FTM" value={displayPlayer.ftm} color="pink" />
+              <StatCard label="FTA" value={displayPlayer.fta} color="cyan" />
+              <StatCard label="3P%" value={displayPlayer.tpPct} color="pink" />
+              <StatCard label="3PM" value={displayPlayer.tpm} color="cyan" />
+              <StatCard label="3PA" value={displayPlayer.tpa} color="pink" />
 
               {/* Rebounding Stats */}
-              <StatCard label="ORPG" value={displayPlayer.orpg} color="pink" />
-              <StatCard label="DRPG" value={displayPlayer.drpg} color="cyan" />
+              <StatCard label="ORPG" value={displayPlayer.orpg} color="cyan" />
+              <StatCard label="DRPG" value={displayPlayer.drpg} color="pink" />
 
               {/* Defense Stats */}
-              <StatCard label="SPG" value={displayPlayer.spg} color="pink" />
-              <StatCard label="BPG" value={displayPlayer.bpg} color="cyan" />
-              <StatCard label="TOPG" value={displayPlayer.topg} color="pink" />
+              <StatCard label="SPG" value={displayPlayer.spg} color="cyan" />
+              <StatCard label="BPG" value={displayPlayer.bpg} color="pink" />
+              <StatCard label="TOPG" value={displayPlayer.topg} color="cyan" />
 
               {/* Efficiency Stats */}
-              <StatCard label="TS%" value={displayPlayer.ts} color="cyan" />
-              <StatCard label="EFG%" value={displayPlayer.efg} color="pink" />
-              <StatCard label="PFPG" value={displayPlayer.pfpg} color="cyan" />
+              <StatCard label="TS%" value={displayPlayer.ts} color="pink" />
+              <StatCard label="EFG%" value={displayPlayer.efg} color="cyan" />
+              <StatCard label="PFPG" value={displayPlayer.pfpg} color="pink" />
             </div>
           </div>
         )}

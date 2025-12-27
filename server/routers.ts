@@ -148,6 +148,31 @@ export const appRouter = router({
         return null;
       }
     }),
+    getPlayerById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+      const { getPlayerById } = await import("./db");
+      try {
+        const player = await getPlayerById(input.id);
+        return player || null;
+      } catch (error) {
+        console.error("Error fetching player by ID:", error);
+        return null;
+      }
+    }),
+    searchPlayers: publicProcedure.input(z.object({
+      search: z.string().optional(),
+      position: z.string().optional(),
+      teamId: z.number().optional(),
+      limit: z.number().optional().default(50),
+    })).query(async ({ input }) => {
+      const { searchPlayers } = await import("./db");
+      try {
+        const players = await searchPlayers(input);
+        return players || [];
+      } catch (error) {
+        console.error("Error searching players:", error);
+        return [];
+      }
+    }),
     getAllTeams: publicProcedure.query(async () => {
       const { getAllTeams } = await import("./db");
       try {
@@ -531,6 +556,69 @@ export const appRouter = router({
           });
         }
       })
+  }),
+
+  // Odds API - Live NBA games and betting lines
+  odds: router({
+    getTodaysGames: publicProcedure.query(async () => {
+      const { getTodaysGames, formatGameForDisplay } = await import("./oddsApi");
+      try {
+        const games = await getTodaysGames();
+        return games.map(formatGameForDisplay);
+      } catch (error) {
+        console.error("Error fetching today's games:", error);
+        return [];
+      }
+    }),
+
+    getUpcomingGames: publicProcedure.query(async () => {
+      const { getUpcomingGames, formatGameForDisplay } = await import("./oddsApi");
+      try {
+        const games = await getUpcomingGames();
+        return games.map(formatGameForDisplay);
+      } catch (error) {
+        console.error("Error fetching upcoming games:", error);
+        return [];
+      }
+    }),
+
+    getPlayerProps: publicProcedure
+      .input(z.object({
+        eventId: z.string(),
+        market: z.string().optional().default("player_points")
+      }))
+      .query(async ({ input }) => {
+        const { getPlayerProps } = await import("./oddsApi");
+        try {
+          return await getPlayerProps(input.eventId, input.market);
+        } catch (error) {
+          console.error("Error fetching player props:", error);
+          return null;
+        }
+      }),
+
+    getAllPlayerProps: publicProcedure
+      .input(z.object({ eventId: z.string() }))
+      .query(async ({ input }) => {
+        const { getAllPlayerProps } = await import("./oddsApi");
+        try {
+          return await getAllPlayerProps(input.eventId);
+        } catch (error) {
+          console.error("Error fetching all player props:", error);
+          return null;
+        }
+      }),
+
+    testConnection: publicProcedure.query(async () => {
+      const { testOddsApiConnection } = await import("./oddsApi");
+      try {
+        const connected = await testOddsApiConnection();
+        return { connected, message: connected ? "Odds API connected successfully" : "Failed to connect to Odds API" };
+      } catch (error) {
+        console.error("Error testing Odds API connection:", error);
+        return { connected: false, message: "Error testing connection" };
+      }
+    }),
   }),
 });
 

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -129,6 +129,51 @@ export async function getPlayerByName(fullName: string) {
     sql`${players.fullName} LIKE ${searchTerm}`
   ).limit(1);
   
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function searchPlayers(options: {
+  search?: string;
+  position?: string;
+  teamId?: number;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { search, position, teamId, limit = 50 } = options;
+  
+  let query = db.select().from(players);
+  
+  const conditions = [];
+  
+  if (search && search.trim()) {
+    const searchTerm = `%${search.trim()}%`;
+    conditions.push(sql`${players.fullName} LIKE ${searchTerm}`);
+  }
+  
+  if (position && position.trim()) {
+    // Handle positions like "PG", "SG", "SF", "PF", "C" or combinations like "PG-SG"
+    const positionTerm = `%${position.trim()}%`;
+    conditions.push(sql`${players.position} LIKE ${positionTerm}`);
+  }
+  
+  if (teamId) {
+    conditions.push(eq(players.teamId, teamId));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.limit(limit);
+}
+
+export async function getPlayerById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(players).where(eq(players.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

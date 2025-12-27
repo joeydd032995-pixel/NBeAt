@@ -1,35 +1,18 @@
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Users } from "lucide-react";
+import { PlayerSearchDropdown, Player } from "@/components/PlayerSearchDropdown";
 
-interface PlayerStats {
-  id: number;
-  fullName: string;
-  position: string;
-  gamesPlayed: number;
-  ppg: number;
-  rpg: number;
-  apg: number;
-  fgPct: number;
-  fgm: number;
-  fga: number;
-  ftPct: number;
-  ftm: number;
-  fta: number;
-  tpPct: number;
-  tpm: number;
-  tpa: number;
-  orpg: number;
-  drpg: number;
-  spg: number;
-  bpg: number;
-  topg: number;
-  pfpg: number;
-  ts: number;
-  efg: number;
+interface PlayerStats extends Player {
+  fgm: string;
+  fga: string;
+  ftm: string;
+  fta: string;
+  tpm: string;
+  tpa: string;
+  orpg: string;
+  drpg: string;
+  pfpg: string;
 }
 
 function StatRow({ label, value1, value2, higherIsBetter = true }: { label: string; value1: unknown; value2: unknown; higherIsBetter?: boolean }) {
@@ -57,35 +40,8 @@ function StatRow({ label, value1, value2, higherIsBetter = true }: { label: stri
 }
 
 export default function PlayerComparison() {
-  const [player1Name, setPlayer1Name] = useState("");
-  const [player2Name, setPlayer2Name] = useState("");
-  const [searchedPlayer1, setSearchedPlayer1] = useState("");
-  const [searchedPlayer2, setSearchedPlayer2] = useState("");
-
-  const player1Query = trpc.nba.getPlayerByName.useQuery(
-    { name: searchedPlayer1 },
-    { enabled: searchedPlayer1.length > 0 }
-  );
-
-  const player2Query = trpc.nba.getPlayerByName.useQuery(
-    { name: searchedPlayer2 },
-    { enabled: searchedPlayer2.length > 0 }
-  );
-
-  const player1 = player1Query.data as PlayerStats | null;
-  const player2 = player2Query.data as PlayerStats | null;
-
-  const handleSearch1 = () => {
-    if (player1Name.trim()) {
-      setSearchedPlayer1(player1Name.trim());
-    }
-  };
-
-  const handleSearch2 = () => {
-    if (player2Name.trim()) {
-      setSearchedPlayer2(player2Name.trim());
-    }
-  };
+  const [player1, setPlayer1] = useState<PlayerStats | null>(null);
+  const [player2, setPlayer2] = useState<PlayerStats | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
@@ -107,24 +63,13 @@ export default function PlayerComparison() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter player name..."
-                  value={player1Name}
-                  onChange={(e) => setPlayer1Name(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch1()}
-                  className="bg-slate-900/50 border-pink-500/30 text-white"
-                />
-                <Button onClick={handleSearch1} className="bg-pink-600 hover:bg-pink-700">
-                  <Search className="w-4 h-4" />
-                </Button>
-              </div>
-              {player1 && (
-                <div className="mt-4 p-3 bg-slate-900/50 rounded-lg border border-pink-500/20">
-                  <p className="text-pink-400 font-bold text-lg">{player1.fullName}</p>
-                  <p className="text-gray-400 text-sm">{player1.position} | {player1.gamesPlayed} games</p>
-                </div>
-              )}
+              <PlayerSearchDropdown
+                onPlayerSelect={(p) => setPlayer1(p as PlayerStats)}
+                selectedPlayer={player1}
+                placeholder="Search for Player 1..."
+                showPositionFilter={true}
+                accentColor="pink"
+              />
             </CardContent>
           </Card>
 
@@ -136,24 +81,13 @@ export default function PlayerComparison() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter player name..."
-                  value={player2Name}
-                  onChange={(e) => setPlayer2Name(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch2()}
-                  className="bg-slate-900/50 border-cyan-500/30 text-white"
-                />
-                <Button onClick={handleSearch2} className="bg-cyan-600 hover:bg-cyan-700">
-                  <Search className="w-4 h-4" />
-                </Button>
-              </div>
-              {player2 && (
-                <div className="mt-4 p-3 bg-slate-900/50 rounded-lg border border-cyan-500/20">
-                  <p className="text-cyan-400 font-bold text-lg">{player2.fullName}</p>
-                  <p className="text-gray-400 text-sm">{player2.position} | {player2.gamesPlayed} games</p>
-                </div>
-              )}
+              <PlayerSearchDropdown
+                onPlayerSelect={(p) => setPlayer2(p as PlayerStats)}
+                selectedPlayer={player2}
+                placeholder="Search for Player 2..."
+                showPositionFilter={true}
+                accentColor="cyan"
+              />
             </CardContent>
           </Card>
         </div>
