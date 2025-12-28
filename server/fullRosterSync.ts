@@ -17,14 +17,10 @@ function normalizeName(name: string): string {
     .trim();
 }
 
-// Team abbreviation to ID mapping for the database
-const TEAM_ABBR_TO_ID: Record<string, number> = {
-  "ATL": 1, "BOS": 2, "BKN": 3, "BRK": 3, "CHA": 4, "CHO": 4, "CHI": 5, "CLE": 6,
-  "DAL": 7, "DEN": 8, "DET": 9, "GSW": 10, "GS": 10, "HOU": 11, "IND": 12,
-  "LAC": 13, "LAL": 14, "MEM": 15, "MIA": 16, "MIL": 17, "MIN": 18,
-  "NOP": 19, "NO": 19, "NYK": 20, "NY": 20, "OKC": 21, "ORL": 22,
-  "PHI": 23, "PHX": 24, "PHO": 24, "POR": 25, "SAC": 26, "SAS": 27, "SA": 27,
-  "TOR": 28, "UTA": 29, "WAS": 30
+// Team abbreviation aliases (maps alternate abbreviations to standard ones)
+const TEAM_ABBR_ALIASES: Record<string, string> = {
+  "BRK": "BKN", "CHO": "CHA", "GS": "GSW", "NO": "NOP", "NY": "NYK",
+  "PHO": "PHX", "SA": "SAS"
 };
 
 // Known player positions (for players with incorrect positions in data)
@@ -219,6 +215,28 @@ export async function syncFullRosters(): Promise<{
     }
     console.log(`[Full Roster Sync] Synced ${teamsToInsert.length} teams to database`);
 
+    // Step 3.5: Build team abbreviation to database ID lookup
+    const { getAllTeams } = await import("./db");
+    const dbTeams = await getAllTeams();
+    const teamAbbrToDbId = new Map<string, number>();
+    
+    for (const team of dbTeams) {
+      // Map both the actual abbr and any aliases
+      teamAbbrToDbId.set(team.abbr.toUpperCase(), team.id);
+      teamAbbrToDbId.set(team.abbr.toLowerCase(), team.id);
+    }
+    
+    // Add aliases
+    for (const [alias, standard] of Object.entries(TEAM_ABBR_ALIASES)) {
+      const standardId = teamAbbrToDbId.get(standard.toLowerCase());
+      if (standardId) {
+        teamAbbrToDbId.set(alias, standardId);
+        teamAbbrToDbId.set(alias.toLowerCase(), standardId);
+      }
+    }
+    
+    console.log(`[Full Roster Sync] Built team ID lookup with ${teamAbbrToDbId.size} entries`);
+
     // Step 4: Build ESPN player lookup for external IDs
     const espnPlayerMap = new Map<string, { id: string; firstName: string; lastName: string }>();
     
@@ -272,12 +290,15 @@ export async function syncFullRosters(): Promise<{
       // Use inferPosition to get correct position
       const correctPosition = inferPosition(player);
       
+      // Look up team ID from database (use the dynamic lookup, not hardcoded IDs)
+      const dbTeamId = teamAbbrToDbId.get(player.team) || teamAbbrToDbId.get(player.team.toLowerCase()) || 0;
+      
       playersToInsert.push({
         externalId: espnData ? parseInt(espnData.id) : Math.floor(Math.random() * 900000) + 100000,
         firstName,
         lastName,
         fullName: player.fullName,
-        teamId: TEAM_ABBR_TO_ID[player.team] || 0,
+        teamId: dbTeamId,
         position: correctPosition,
         ppg: player.ppg.toString(),
         fgm: player.fgm.toString(),
