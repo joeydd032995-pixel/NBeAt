@@ -21,11 +21,19 @@ import {
   Trophy,
   Zap,
   ChevronRight,
-  Minus
+  Minus,
+  Settings
 } from "lucide-react";
 import { toast } from "sonner";
 import { GameSelector } from "@/components/GameSelector";
 import { cn } from "@/lib/utils";
+import { 
+  FormulaVariablesPanel, 
+  FormulaVariables, 
+  DEFAULT_VARIABLES,
+  InlineFormulaVariables 
+} from "@/components/FormulaVariablesPanel";
+import { DualTeamRoster } from "@/components/TeamRosterPanel";
 
 // ============================================================================
 // TYPES
@@ -263,11 +271,25 @@ function GameLineCard({ line, onLineChange, homeTeam, awayTeam }: GameLineCardPr
 
 export default function GameDashboard() {
   const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("roster");
   const [showOnlyValue, setShowOnlyValue] = useState(false);
+  const [showFormulaPanel, setShowFormulaPanel] = useState(false);
+  const [formulaVariables, setFormulaVariables] = useState<FormulaVariables>(DEFAULT_VARIABLES);
 
   // Fetch players by team
   const { data: allPlayers } = trpc.players.getAll.useQuery();
+
+  // Update formula variables when game is selected
+  useEffect(() => {
+    if (selectedGame) {
+      setFormulaVariables(prev => ({
+        ...prev,
+        spread: selectedGame.spread?.home || 0,
+        gameTotal: selectedGame.total || 220,
+        isFavorite: (selectedGame.spread?.home || 0) < 0
+      }));
+    }
+  }, [selectedGame]);
 
   // Filter players by team
   const getTeamPlayers = useCallback((teamName: string) => {
@@ -559,9 +581,43 @@ export default function GameDashboard() {
               </div>
             </div>
 
+            {/* Formula Variables Toggle */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFormulaPanel(!showFormulaPanel)}
+                className="border-slate-600 text-gray-300 hover:text-white"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {showFormulaPanel ? "Hide" : "Show"} Formula Variables
+              </Button>
+            </div>
+
+            {/* Formula Variables Panel */}
+            {showFormulaPanel && (
+              <FormulaVariablesPanel
+                variables={formulaVariables}
+                onChange={setFormulaVariables}
+                compact={false}
+              />
+            )}
+
+            {/* Inline Variables (always visible) */}
+            {!showFormulaPanel && (
+              <InlineFormulaVariables
+                variables={formulaVariables}
+                onChange={setFormulaVariables}
+              />
+            )}
+
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-slate-800 border-slate-700">
+                <TabsTrigger value="roster" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <Users className="w-4 h-4 mr-1" />
+                  Rosters
+                </TabsTrigger>
                 <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                   All Bets
                 </TabsTrigger>
@@ -575,6 +631,20 @@ export default function GameDashboard() {
                   {selectedGame.awayTeam}
                 </TabsTrigger>
               </TabsList>
+
+              {/* Roster Tab - NEW */}
+              <TabsContent value="roster" className="mt-4">
+                <DualTeamRoster
+                  homeTeam={selectedGame.homeTeam}
+                  awayTeam={selectedGame.awayTeam}
+                  showSliders={true}
+                  maxPlayersPerTeam={8}
+                  onPropLineChange={(playerId, stat, line) => {
+                    // Update the prop line in state
+                    handlePlayerLineChange(playerId, stat, line);
+                  }}
+                />
+              </TabsContent>
 
               {/* All Bets Tab */}
               <TabsContent value="all" className="space-y-6 mt-4">

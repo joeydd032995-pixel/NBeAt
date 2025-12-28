@@ -42,6 +42,12 @@ import {
   GameLineType
 } from "@/components/BetCategorySelector";
 import { PresetLineSlider, GameLineSlider } from "@/components/LineSlider";
+import { 
+  FormulaVariablesPanel, 
+  FormulaVariables, 
+  DEFAULT_VARIABLES 
+} from "@/components/FormulaVariablesPanel";
+import { TeamRosterPanel } from "@/components/TeamRosterPanel";
 
 // ============================================================================
 // TYPES
@@ -193,6 +199,10 @@ export default function BettingAnalyzer() {
   
   // Auto-analysis on slider change
   const [autoAnalyze, setAutoAnalyze] = useState(true);
+  
+  // Formula variables for advanced adjustments
+  const [formulaVariables, setFormulaVariables] = useState<FormulaVariables>(DEFAULT_VARIABLES);
+  const [showFormulaPanel, setShowFormulaPanel] = useState(false);
   
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -661,36 +671,78 @@ export default function BettingAnalyzer() {
 
                 <Separator className="bg-slate-700" />
 
-                {/* Context Toggles */}
+                {/* Context Toggles - Quick Version */}
                 <div className="space-y-4">
-                  <Label className="text-sm font-medium text-gray-300">Game Context</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-gray-300">Game Context</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowFormulaPanel(!showFormulaPanel)}
+                      className="text-primary text-xs"
+                    >
+                      {showFormulaPanel ? "Hide" : "Show"} Advanced Variables
+                      {showFormulaPanel ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    </Button>
+                  </div>
+                  
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
-                      <Switch checked={isHome} onCheckedChange={setIsHome} />
+                      <Switch 
+                        checked={formulaVariables.isHome} 
+                        onCheckedChange={(v) => {
+                          setFormulaVariables(prev => ({ ...prev, isHome: v }));
+                          setIsHome(v);
+                        }} 
+                      />
                       <Label className="text-sm text-gray-300">Home</Label>
                     </div>
                     <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
-                      <Switch checked={isFavorite} onCheckedChange={setIsFavorite} />
+                      <Switch 
+                        checked={formulaVariables.isFavorite} 
+                        onCheckedChange={(v) => {
+                          setFormulaVariables(prev => ({ ...prev, isFavorite: v }));
+                          setIsFavorite(v);
+                        }} 
+                      />
                       <Label className="text-sm text-gray-300">Favored</Label>
                     </div>
                     <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
-                      <Switch checked={isBackToBack} onCheckedChange={setIsBackToBack} />
+                      <Switch 
+                        checked={formulaVariables.isBackToBack} 
+                        onCheckedChange={(v) => {
+                          setFormulaVariables(prev => ({ ...prev, isBackToBack: v }));
+                          setIsBackToBack(v);
+                        }} 
+                      />
                       <Label className="text-sm text-gray-300">B2B</Label>
                     </div>
                     <div className="bg-slate-800/30 rounded-lg p-3">
                       <Label className="text-xs text-gray-400 mb-1 block">Rest Days</Label>
                       <Slider
-                        value={[daysRest]}
-                        onValueChange={(v) => setDaysRest(v[0])}
+                        value={[formulaVariables.daysRest]}
+                        onValueChange={(v) => {
+                          setFormulaVariables(prev => ({ ...prev, daysRest: v[0] }));
+                          setDaysRest(v[0]);
+                        }}
                         min={0}
                         max={7}
                         step={1}
                         className="w-full"
                       />
-                      <div className="text-center text-sm text-gray-300 mt-1">{daysRest} days</div>
+                      <div className="text-center text-sm text-gray-300 mt-1">{formulaVariables.daysRest} days</div>
                     </div>
                   </div>
                 </div>
+
+                {/* Advanced Formula Variables Panel */}
+                {showFormulaPanel && (
+                  <FormulaVariablesPanel
+                    variables={formulaVariables}
+                    onChange={setFormulaVariables}
+                    showAdvanced={true}
+                  />
+                )}
 
                 {/* Analyze Button (only shown if auto-analyze is off) */}
                 {!autoAnalyze && (
