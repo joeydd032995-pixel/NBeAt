@@ -12,23 +12,22 @@ import TeamAnalytics from "./pages/TeamAnalytics";
 import LiveOdds from "./pages/LiveOdds";
 import RosterVerification from "./pages/RosterVerification";
 import ParlayBuilder from "./pages/ParlayBuilder";
-// import KellyCalculator from "./pages/KellyCalculator";
 import BankrollManager from "./pages/BankrollManager";
 import MarketAnalysis from "./pages/MarketAnalysis";
 import PerformanceAnalytics from "./pages/PerformanceAnalytics";
-// import BettingChatbot from "./pages/BettingChatbot";
 import DataSync from "./pages/DataSync";
 import { PropAnalyzer } from "./pages/PropAnalyzer";
 import { InjuryReport } from "./pages/InjuryReport";
 import { CustomAlerts } from "./pages/CustomAlerts";
 import AIAssistant from "./pages/AIAssistant";
 import PropsAnalytics from "./pages/PropsAnalytics";
-// import OpportunitiesDashboard from "./pages/OpportunitiesDashboard";
+import BettingAnalyzer from "./pages/BettingAnalyzer";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/betting-analyzer"} component={BettingAnalyzer} />
       <Route path={"/player-stats"} component={PlayerStats} />
       <Route path={"/player-comparison"} component={PlayerComparison} />
       <Route path={"/stat-trends"} component={StatTrends} />
@@ -36,18 +35,15 @@ function Router() {
       <Route path={"/live-odds"} component={LiveOdds} />
       <Route path={"/roster-verification"} component={RosterVerification} />
       <Route path={"/parlay-builder"} component={ParlayBuilder} />
-      {/* <Route path={"/kelly-calculator"} component={KellyCalculator} /> */}
       <Route path={"/bankroll-manager"} component={BankrollManager} />
       <Route path={"/market-analysis"} component={MarketAnalysis} />
       <Route path={"/performance"} component={PerformanceAnalytics} />
-      {/* <Route path={"/chatbot"} component={BettingChatbot} /> */}
       <Route path={"/data-sync"} component={DataSync} />
       <Route path={"/prop-analyzer"} component={PropAnalyzer} />
       <Route path={"/props-analytics"} component={PropsAnalytics} />
       <Route path={"/injury-report"} component={InjuryReport} />
       <Route path={"/custom-alerts"} component={CustomAlerts} />
       <Route path={"/ai-assistant"} component={AIAssistant} />
-      {/* <Route path={"/opportunities"} component={OpportunitiesDashboard} /> */}
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

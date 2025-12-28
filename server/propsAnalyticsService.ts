@@ -556,3 +556,164 @@ export async function calculatePropSpecific(
     };
   }
 }
+
+/**
+ * Universal prop analyzer - handles all bet types
+ */
+export async function analyzeProp(
+  betType: string,
+  playerData: Record<string, unknown>,
+  line: number
+): Promise<{
+  success: boolean;
+  bet_type?: string;
+  projection?: number;
+  line?: number;
+  edge?: number;
+  edge_pct?: number;
+  recommendation?: string;
+  confidence?: number;
+  factors_applied?: string[];
+  probability?: { over: number; under: number };
+  monte_carlo?: unknown;
+  scripts_used?: string[];
+  error?: string;
+}> {
+  try {
+    const result = await executePythonAnalytics("analyze_prop", {
+      bet_type: betType,
+      ...playerData,
+      line,
+    });
+
+    return result as {
+      success: boolean;
+      bet_type?: string;
+      projection?: number;
+      line?: number;
+      edge?: number;
+      edge_pct?: number;
+      recommendation?: string;
+      confidence?: number;
+      factors_applied?: string[];
+      probability?: { over: number; under: number };
+      monte_carlo?: unknown;
+      scripts_used?: string[];
+      error?: string;
+    };
+  } catch (error) {
+    console.error("Analyze prop error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Combined props analyzer (PRA, PA, PR, RA, S+B)
+ */
+export async function analyzeCombinedProp(
+  propType: string,
+  playerData: Record<string, unknown>,
+  line: number
+): Promise<{
+  success: boolean;
+  prop_type?: string;
+  projection?: number;
+  line?: number;
+  edge?: number;
+  edge_pct?: number;
+  recommendation?: string;
+  confidence?: number;
+  components?: Record<string, number>;
+  base_projection?: number;
+  factors_applied?: string[];
+  scripts_used?: string[];
+  error?: string;
+}> {
+  try {
+    const result = await executePythonAnalytics("combined_prop", {
+      prop_type: propType,
+      ...playerData,
+      line,
+    });
+
+    return result as {
+      success: boolean;
+      prop_type?: string;
+      projection?: number;
+      line?: number;
+      edge?: number;
+      edge_pct?: number;
+      recommendation?: string;
+      confidence?: number;
+      components?: Record<string, number>;
+      base_projection?: number;
+      factors_applied?: string[];
+      scripts_used?: string[];
+      error?: string;
+    };
+  } catch (error) {
+    console.error("Combined prop error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Game line analyzer (ML, spread, total, quarters, halves)
+ */
+export async function analyzeGameLine(
+  lineType: string,
+  gameData: Record<string, unknown>,
+  line: number
+): Promise<{
+  success: boolean;
+  line_type?: string;
+  projection?: number;
+  line?: number;
+  edge?: number;
+  edge_pct?: number;
+  recommendation?: string;
+  confidence?: number;
+  expected_margin?: number;
+  implied_prob?: number;
+  period?: string;
+  factors_applied?: string[];
+  scripts_used?: string[];
+  error?: string;
+}> {
+  try {
+    const result = await executePythonAnalytics("game_line", {
+      line_type: lineType,
+      ...gameData,
+      line,
+    });
+
+    return result as {
+      success: boolean;
+      line_type?: string;
+      projection?: number;
+      line?: number;
+      edge?: number;
+      edge_pct?: number;
+      recommendation?: string;
+      confidence?: number;
+      expected_margin?: number;
+      implied_prob?: number;
+      period?: string;
+      factors_applied?: string[];
+      scripts_used?: string[];
+      error?: string;
+    };
+  } catch (error) {
+    console.error("Game line error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

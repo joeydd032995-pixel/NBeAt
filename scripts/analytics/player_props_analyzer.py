@@ -700,6 +700,424 @@ class PlayerPropsAnalyzer:
             }
 
 
+    def analyze_combined_prop(
+        self,
+        prop_type: str,
+        player_data: Dict[str, Any],
+        line: float
+    ) -> Dict[str, Any]:
+        """
+        Analyze combined props like PRA, PA, PR, RA, S+B.
+        
+        Args:
+            prop_type: Type of combined prop (pra, pa, pr, ra, steals_blocks)
+            player_data: Player stats dict with ppg, rpg, apg, spg, bpg
+            line: Sportsbook line
+        
+        Returns:
+            Dict with combined prop analysis
+        """
+        try:
+            ppg = float(player_data.get('ppg', 0))
+            rpg = float(player_data.get('rpg', 0))
+            apg = float(player_data.get('apg', 0))
+            spg = float(player_data.get('spg', 0))
+            bpg = float(player_data.get('bpg', 0))
+            
+            # Calculate base projection based on prop type
+            prop_type_lower = prop_type.lower()
+            if prop_type_lower == 'pra':
+                base_projection = ppg + rpg + apg
+                components = {'points': ppg, 'rebounds': rpg, 'assists': apg}
+                correlation_adj = 0.98  # Slight negative correlation
+            elif prop_type_lower == 'pa':
+                base_projection = ppg + apg
+                components = {'points': ppg, 'assists': apg}
+                correlation_adj = 0.99
+            elif prop_type_lower == 'pr':
+                base_projection = ppg + rpg
+                components = {'points': ppg, 'rebounds': rpg}
+                correlation_adj = 0.99
+            elif prop_type_lower == 'ra':
+                base_projection = rpg + apg
+                components = {'rebounds': rpg, 'assists': apg}
+                correlation_adj = 1.0
+            elif prop_type_lower in ['steals_blocks', 's+b', 'sb']:
+                base_projection = spg + bpg
+                components = {'steals': spg, 'blocks': bpg}
+                correlation_adj = 1.02  # Slight positive correlation for defensive stats
+            else:
+                return {
+                    'success': False,
+                    'error': f'Unknown combined prop type: {prop_type}'
+                }
+            
+            # Apply game context adjustments
+            is_home = player_data.get('is_home', True)
+            is_favorite = player_data.get('is_favorite', True)
+            is_b2b = player_data.get('is_back_to_back', False)
+            days_rest = player_data.get('days_rest', 2)
+            
+            adjustment = correlation_adj
+            factors = [f'correlation_adj_{correlation_adj}']
+            
+            if is_home:
+                adjustment *= 1.02
+                factors.append('home_+2%')
+            if is_favorite:
+                adjustment *= 1.015
+                factors.append('favorite_+1.5%')
+            if is_b2b:
+                adjustment *= 0.95
+                factors.append('b2b_-5%')
+            elif days_rest >= 3:
+                adjustment *= 1.02
+                factors.append('rested_+2%')
+            
+            final_projection = base_projection * adjustment
+            edge = final_projection - line
+            edge_pct = (edge / line) * 100 if line > 0 else 0
+            
+            # Determine recommendation
+            if edge_pct > 5:
+                recommendation = 'STRONG_OVER'
+            elif edge_pct > 2:
+                recommendation = 'OVER'
+            elif edge_pct < -5:
+                recommendation = 'STRONG_UNDER'
+            elif edge_pct < -2:
+                recommendation = 'UNDER'
+            else:
+                recommendation = 'PASS'
+            
+            confidence = min(0.95, 0.6 + abs(edge_pct) * 0.03)
+            
+            return {
+                'success': True,
+                'prop_type': prop_type,
+                'projection': round(final_projection, 1),
+                'line': line,
+                'edge': round(edge, 1),
+                'edge_pct': round(edge_pct, 1),
+                'recommendation': recommendation,
+                'confidence': round(confidence, 2),
+                'components': components,
+                'base_projection': round(base_projection, 1),
+                'factors_applied': factors,
+                'scripts_used': ['Script55_ParlayCorrelation', 'Script4_GameContext', 'Script12_RestImpact']
+            }
+            
+        except Exception as e:
+            logger.error(f"Combined prop error: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def analyze_any_prop(
+        self,
+        bet_type: str,
+        player_data: Dict[str, Any],
+        line: float
+    ) -> Dict[str, Any]:
+        """
+        Universal prop analyzer that handles all bet types.
+        
+        Args:
+            bet_type: Type of bet (points, rebounds, assists, pra, pa, etc.)
+            player_data: Player stats and context
+            line: Sportsbook line
+        
+        Returns:
+            Dict with comprehensive analysis
+        """
+        try:
+            bet_type_lower = bet_type.lower()
+            
+            # Combined props
+            if bet_type_lower in ['pra', 'pa', 'pr', 'ra', 'steals_blocks', 's+b', 'sb']:
+                return self.analyze_combined_prop(bet_type_lower, player_data, line)
+            
+            # Single stat props
+            stat_map = {
+                'points': ('ppg', 'season_ppg'),
+                'rebounds': ('rpg', 'rpg'),
+                'assists': ('apg', 'apg'),
+                'steals': ('spg', 'spg'),
+                'blocks': ('bpg', 'bpg'),
+                'three_pointers': ('tpm', 'tpm'),
+                '3pm': ('tpm', 'tpm'),
+                'threes': ('tpm', 'tpm'),
+            }
+            
+            if bet_type_lower in stat_map:
+                stat_key, alt_key = stat_map[bet_type_lower]
+                base_stat = float(player_data.get(stat_key, player_data.get(alt_key, player_data.get('season_ppg', 0))))
+                
+                # Apply adjustments
+                is_home = player_data.get('is_home', True)
+                is_favorite = player_data.get('is_favorite', True)
+                is_b2b = player_data.get('is_back_to_back', False)
+                days_rest = player_data.get('days_rest', 2)
+                
+                adjustment = 1.0
+                factors = []
+                
+                if is_home:
+                    adjustment *= 1.02
+                    factors.append('home_+2%')
+                if is_favorite:
+                    adjustment *= 1.015
+                    factors.append('favorite_+1.5%')
+                if is_b2b:
+                    adjustment *= 0.95
+                    factors.append('b2b_-5%')
+                elif days_rest >= 3:
+                    adjustment *= 1.02
+                    factors.append('rested_+2%')
+                
+                projection = base_stat * adjustment
+                edge = projection - line
+                edge_pct = (edge / line) * 100 if line > 0 else 0
+                
+                if edge_pct > 5:
+                    recommendation = 'STRONG_OVER'
+                elif edge_pct > 2:
+                    recommendation = 'OVER'
+                elif edge_pct < -5:
+                    recommendation = 'STRONG_UNDER'
+                elif edge_pct < -2:
+                    recommendation = 'UNDER'
+                else:
+                    recommendation = 'PASS'
+                
+                confidence = min(0.95, 0.6 + abs(edge_pct) * 0.03)
+                
+                # Run Monte Carlo
+                std_dev = base_stat * 0.25  # Assume 25% variance
+                mc_result = self.run_monte_carlo(projection, std_dev, line, 5000)
+                
+                return {
+                    'success': True,
+                    'bet_type': bet_type,
+                    'projection': round(projection, 1),
+                    'line': line,
+                    'edge': round(edge, 1),
+                    'edge_pct': round(edge_pct, 1),
+                    'recommendation': recommendation,
+                    'confidence': round(confidence, 2),
+                    'base_stat': round(base_stat, 1),
+                    'factors_applied': factors,
+                    'probability': {
+                        'over': round(mc_result.get('p_over', 0.5) * 100, 1),
+                        'under': round(mc_result.get('p_under', 0.5) * 100, 1)
+                    },
+                    'monte_carlo': mc_result,
+                    'scripts_used': ['Script1_BaseProjection', 'Script4_GameContext', 'Script12_RestImpact', 'Script53_MonteCarloRanges']
+                }
+            
+            # For points, use full analysis
+            if bet_type_lower == 'points':
+                return self.full_analysis(player_data, line)
+            
+            return {
+                'success': False,
+                'error': f'Unknown bet type: {bet_type}'
+            }
+            
+        except Exception as e:
+            logger.error(f"Analyze any prop error: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def analyze_game_line(
+        self,
+        line_type: str,
+        game_data: Dict[str, Any],
+        line: float
+    ) -> Dict[str, Any]:
+        """
+        Analyze game lines (ML, spread, total, quarters, halves).
+        
+        Args:
+            line_type: Type of game line (moneyline, spread, total, q1_ml, h1_spread, etc.)
+            game_data: Game context data
+            line: Sportsbook line
+        
+        Returns:
+            Dict with game line analysis
+        """
+        try:
+            line_type_lower = line_type.lower()
+            
+            home_rating = float(game_data.get('home_rating', 110))
+            away_rating = float(game_data.get('away_rating', 108))
+            home_pace = float(game_data.get('home_pace', 100))
+            away_pace = float(game_data.get('away_pace', 100))
+            
+            # Calculate expected margin
+            rating_diff = home_rating - away_rating
+            home_advantage = 3.5  # Standard home court advantage
+            expected_margin = rating_diff + home_advantage
+            
+            # Calculate expected total
+            avg_pace = (home_pace + away_pace) / 2
+            pace_factor = avg_pace / 100
+            expected_total = (home_rating + away_rating) * pace_factor
+            
+            factors = [f'rating_diff_{rating_diff:.1f}', f'home_advantage_{home_advantage}']
+            scripts_used = ['Script22_TeamOrtg', 'Script19_HomeAwaySplits', 'Script37_OpponentPace']
+            
+            # Handle different line types
+            if line_type_lower == 'moneyline':
+                # Convert margin to win probability
+                win_prob = 0.5 + (expected_margin / 30)  # Rough conversion
+                win_prob = max(0.1, min(0.9, win_prob))
+                
+                # Line is the moneyline odds
+                if line < 0:
+                    implied_prob = abs(line) / (abs(line) + 100)
+                else:
+                    implied_prob = 100 / (line + 100)
+                
+                edge = (win_prob - implied_prob) * 100
+                
+                return {
+                    'success': True,
+                    'line_type': line_type,
+                    'projection': round(win_prob * 100, 1),
+                    'line': line,
+                    'implied_prob': round(implied_prob * 100, 1),
+                    'edge': round(edge, 1),
+                    'recommendation': 'BET' if edge > 3 else 'PASS',
+                    'confidence': round(min(0.9, 0.5 + abs(edge) * 0.02), 2),
+                    'expected_margin': round(expected_margin, 1),
+                    'factors_applied': factors,
+                    'scripts_used': scripts_used
+                }
+            
+            elif line_type_lower == 'spread':
+                edge = expected_margin - (-line)  # Line is negative for favorite
+                edge_pct = abs(edge / line) * 100 if line != 0 else 0
+                
+                if edge > 2:
+                    recommendation = 'HOME'
+                elif edge < -2:
+                    recommendation = 'AWAY'
+                else:
+                    recommendation = 'PASS'
+                
+                return {
+                    'success': True,
+                    'line_type': line_type,
+                    'projection': round(expected_margin, 1),
+                    'line': line,
+                    'edge': round(edge, 1),
+                    'edge_pct': round(edge_pct, 1),
+                    'recommendation': recommendation,
+                    'confidence': round(min(0.9, 0.5 + abs(edge) * 0.03), 2),
+                    'factors_applied': factors,
+                    'scripts_used': scripts_used
+                }
+            
+            elif line_type_lower in ['total', 'over_under', 'o/u']:
+                edge = expected_total - line
+                edge_pct = (edge / line) * 100 if line > 0 else 0
+                
+                if edge > 3:
+                    recommendation = 'OVER'
+                elif edge < -3:
+                    recommendation = 'UNDER'
+                else:
+                    recommendation = 'PASS'
+                
+                return {
+                    'success': True,
+                    'line_type': line_type,
+                    'projection': round(expected_total, 1),
+                    'line': line,
+                    'edge': round(edge, 1),
+                    'edge_pct': round(edge_pct, 1),
+                    'recommendation': recommendation,
+                    'confidence': round(min(0.9, 0.5 + abs(edge) * 0.02), 2),
+                    'factors_applied': factors + [f'pace_factor_{pace_factor:.2f}'],
+                    'scripts_used': scripts_used + ['Script40_PossessionVariance']
+                }
+            
+            # Quarter/Half lines
+            elif 'q1' in line_type_lower or 'h1' in line_type_lower or 'h2' in line_type_lower:
+                # Adjust for period
+                if 'q1' in line_type_lower:
+                    period_factor = 0.25
+                    period_name = 'Q1'
+                elif 'h1' in line_type_lower:
+                    period_factor = 0.5
+                    period_name = 'H1'
+                else:
+                    period_factor = 0.5
+                    period_name = 'H2'
+                
+                if 'spread' in line_type_lower:
+                    period_margin = expected_margin * period_factor
+                    edge = period_margin - (-line)
+                    return {
+                        'success': True,
+                        'line_type': line_type,
+                        'projection': round(period_margin, 1),
+                        'line': line,
+                        'edge': round(edge, 1),
+                        'recommendation': 'HOME' if edge > 1 else ('AWAY' if edge < -1 else 'PASS'),
+                        'confidence': round(min(0.85, 0.5 + abs(edge) * 0.04), 2),
+                        'period': period_name,
+                        'factors_applied': factors,
+                        'scripts_used': scripts_used
+                    }
+                elif 'total' in line_type_lower or 'o/u' in line_type_lower:
+                    period_total = expected_total * period_factor
+                    edge = period_total - line
+                    return {
+                        'success': True,
+                        'line_type': line_type,
+                        'projection': round(period_total, 1),
+                        'line': line,
+                        'edge': round(edge, 1),
+                        'recommendation': 'OVER' if edge > 2 else ('UNDER' if edge < -2 else 'PASS'),
+                        'confidence': round(min(0.85, 0.5 + abs(edge) * 0.03), 2),
+                        'period': period_name,
+                        'factors_applied': factors,
+                        'scripts_used': scripts_used
+                    }
+                else:  # ML
+                    period_margin = expected_margin * period_factor
+                    win_prob = 0.5 + (period_margin / 20)
+                    win_prob = max(0.2, min(0.8, win_prob))
+                    return {
+                        'success': True,
+                        'line_type': line_type,
+                        'projection': round(win_prob * 100, 1),
+                        'line': line,
+                        'recommendation': 'HOME' if win_prob > 0.55 else ('AWAY' if win_prob < 0.45 else 'PASS'),
+                        'confidence': round(min(0.8, 0.5 + abs(win_prob - 0.5) * 0.5), 2),
+                        'period': period_name,
+                        'factors_applied': factors,
+                        'scripts_used': scripts_used
+                    }
+            
+            return {
+                'success': False,
+                'error': f'Unknown game line type: {line_type}'
+            }
+            
+        except Exception as e:
+            logger.error(f"Game line analysis error: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+
 def main():
     """Main entry point for command-line usage."""
     parser = argparse.ArgumentParser(description='NBA Player Props Analyzer')
@@ -774,13 +1192,36 @@ def main():
             result = analyzer.full_analysis(data, data.get('line', 0))
         
         elif args.action == 'batch_analysis':
-            # Batch analysis for multiple players
             players = data.get('players', [])
             results = []
             for player in players:
                 player_result = analyzer.full_analysis(player, player.get('line', 0))
                 results.append(player_result)
             result = {'success': True, 'results': results, 'count': len(results)}
+        
+        elif args.action == 'analyze_prop':
+            # Universal prop analyzer
+            result = analyzer.analyze_any_prop(
+                data.get('bet_type', 'points'),
+                data,
+                data.get('line', 0)
+            )
+        
+        elif args.action == 'combined_prop':
+            # Combined props (PRA, PA, PR, RA, S+B)
+            result = analyzer.analyze_combined_prop(
+                data.get('prop_type', 'pra'),
+                data,
+                data.get('line', 0)
+            )
+        
+        elif args.action == 'game_line':
+            # Game line analysis (ML, spread, total, quarters, halves)
+            result = analyzer.analyze_game_line(
+                data.get('line_type', 'spread'),
+                data,
+                data.get('line', 0)
+            )
         
         else:
             result = {'success': False, 'error': f'Unknown action: {args.action}'}

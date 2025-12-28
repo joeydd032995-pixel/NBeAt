@@ -388,6 +388,69 @@ export const appRouter = router({
         const { runBatchAnalysis } = await import("./propsAnalyticsService");
         return await runBatchAnalysis(input.players);
       }),
+
+    // Universal prop analyzer - handles all bet types
+    analyzeProp: publicProcedure
+      .input(z.object({
+        bet_type: z.string(),
+        player_id: z.number().optional(),
+        ppg: z.number().optional(),
+        rpg: z.number().optional(),
+        apg: z.number().optional(),
+        spg: z.number().optional(),
+        bpg: z.number().optional(),
+        tpm: z.number().optional(),
+        season_ppg: z.number().optional(),
+        avg_minutes: z.number().optional(),
+        line: z.number(),
+        is_home: z.boolean().optional().default(true),
+        is_favorite: z.boolean().optional().default(true),
+        spread: z.number().optional().default(0),
+        total: z.number().optional().default(220),
+        days_rest: z.number().optional().default(2),
+        is_back_to_back: z.boolean().optional().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        const { analyzeProp } = await import("./propsAnalyticsService");
+        return await analyzeProp(input.bet_type, input, input.line);
+      }),
+
+    // Combined props analyzer (PRA, PA, PR, RA, S+B)
+    analyzeCombinedProp: publicProcedure
+      .input(z.object({
+        prop_type: z.enum(["pra", "pa", "pr", "ra", "steals_blocks", "s+b"]),
+        ppg: z.number(),
+        rpg: z.number(),
+        apg: z.number(),
+        spg: z.number().optional().default(0),
+        bpg: z.number().optional().default(0),
+        line: z.number(),
+        is_home: z.boolean().optional().default(true),
+        is_favorite: z.boolean().optional().default(true),
+        days_rest: z.number().optional().default(2),
+        is_back_to_back: z.boolean().optional().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        const { analyzeCombinedProp } = await import("./propsAnalyticsService");
+        return await analyzeCombinedProp(input.prop_type, input, input.line);
+      }),
+
+    // Game line analyzer (ML, spread, total, quarters, halves)
+    analyzeGameLine: publicProcedure
+      .input(z.object({
+        line_type: z.string(),
+        home_team: z.string().optional(),
+        away_team: z.string().optional(),
+        home_rating: z.number().optional().default(110),
+        away_rating: z.number().optional().default(108),
+        home_pace: z.number().optional().default(100),
+        away_pace: z.number().optional().default(100),
+        line: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const { analyzeGameLine } = await import("./propsAnalyticsService");
+        return await analyzeGameLine(input.line_type, input, input.line);
+      }),
   }),
 
   // Custom Alerts
@@ -498,28 +561,6 @@ export const appRouter = router({
     }),
   }),
 
-  // Betting Odds
-  odds: router({
-    getNBAOdds: publicProcedure.query(async () => {
-      const { fetchNBAOdds } = await import("./oddsService");
-      try {
-        return await fetchNBAOdds();
-      } catch (error) {
-        console.error("Error fetching NBA odds:", error);
-        return [];
-      }
-    }),
-    getTeamNextGameOdds: publicProcedure.input(z.object({ teamName: z.string() })).query(async ({ input }) => {
-      const { getTeamNextGameOdds } = await import("./oddsService");
-      try {
-        return await getTeamNextGameOdds(input.teamName);
-      } catch (error) {
-        console.error("Error fetching team odds:", error);
-        return null;
-      }
-    }),
-  }),
-
   // AI Assistant
   ai: router({
     chat: publicProcedure
@@ -572,6 +613,27 @@ export const appRouter = router({
 
   // Odds API - Live NBA games and betting lines
   odds: router({
+    // Legacy odds service endpoints
+    getNBAOdds: publicProcedure.query(async () => {
+      const { fetchNBAOdds } = await import("./oddsService");
+      try {
+        return await fetchNBAOdds();
+      } catch (error) {
+        console.error("Error fetching NBA odds:", error);
+        return [];
+      }
+    }),
+    getTeamNextGameOdds: publicProcedure.input(z.object({ teamName: z.string() })).query(async ({ input }) => {
+      const { getTeamNextGameOdds } = await import("./oddsService");
+      try {
+        return await getTeamNextGameOdds(input.teamName);
+      } catch (error) {
+        console.error("Error fetching team odds:", error);
+        return null;
+      }
+    }),
+
+    // New Odds API endpoints
     getTodaysGames: publicProcedure.query(async () => {
       const { getTodaysGames, formatGameForDisplay } = await import("./oddsApi");
       try {
