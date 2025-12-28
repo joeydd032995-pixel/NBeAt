@@ -1,15 +1,24 @@
 /**
  * Props Analytics Service
  * =======================
- * TypeScript service that integrates with the Python NBA Props Toolkit
- * to provide advanced player prop projections and betting analytics.
+ * TypeScript service providing advanced player prop projections and betting analytics.
+ * Uses pure TypeScript implementation - no Python dependencies.
  */
 
-import { spawn } from "child_process";
-import path from "path";
 import { getPlayerByName, getAllPlayers } from "./db";
+import { 
+  analyticsEngine, 
+  AnalysisResult, 
+  CombinedPropResult, 
+  GameLineResult,
+  PlayerData,
+  GameContext
+} from "./analyticsEngine";
 
-// Types for analytics results
+// ============================================================================
+// TYPES (Re-export for compatibility)
+// ============================================================================
+
 export interface BaseProjectionResult {
   success: boolean;
   projection: number;
@@ -116,61 +125,9 @@ export interface PlayerPropsInput {
   line?: number;
 }
 
-/**
- * Execute Python analytics script with given action and data
- */
-async function executePythonAnalytics(
-  action: string,
-  data: Record<string, unknown>
-): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const scriptPath = path.join(
-      process.cwd(),
-      "scripts",
-      "analytics",
-      "player_props_analyzer.py"
-    );
-
-    const pythonProcess = spawn("python3", [
-      scriptPath,
-      "--action",
-      action,
-      "--data",
-      JSON.stringify(data),
-    ]);
-
-    let stdout = "";
-    let stderr = "";
-
-    pythonProcess.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
-
-    pythonProcess.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
-
-    pythonProcess.on("close", (code) => {
-      if (code !== 0) {
-        console.error(`Python script error: ${stderr}`);
-        reject(new Error(`Python script exited with code ${code}: ${stderr}`));
-        return;
-      }
-
-      try {
-        const result = JSON.parse(stdout.trim());
-        resolve(result);
-      } catch (e) {
-        console.error(`Failed to parse Python output: ${stdout}`);
-        reject(new Error(`Failed to parse Python output: ${stdout}`));
-      }
-    });
-
-    pythonProcess.on("error", (err) => {
-      reject(new Error(`Failed to start Python process: ${err.message}`));
-    });
-  });
-}
+// ============================================================================
+// ANALYTICS FUNCTIONS
+// ============================================================================
 
 /**
  * Calculate base PPG projection for a player
@@ -179,20 +136,29 @@ export async function calculateBaseProjection(
   playerData: PlayerPropsInput
 ): Promise<BaseProjectionResult> {
   try {
-    const result = (await executePythonAnalytics("base_projection", {
-      season_ppg: playerData.season_ppg,
-      expected_minutes: playerData.expected_minutes || playerData.avg_minutes,
-      avg_minutes: playerData.avg_minutes,
-      adjustment_factor: 1.0,
-    })) as BaseProjectionResult;
+    const avgMinutes = playerData.avg_minutes || 30;
+    const expectedMinutes = playerData.expected_minutes || avgMinutes;
+    
+    const projection = analyticsEngine.calculateBaseProjection(
+      playerData.season_ppg,
+      expectedMinutes,
+      avgMinutes
+    );
 
-    return result;
+    return {
+      success: true,
+      projection: Math.round(projection * 100) / 100,
+      season_ppg: playerData.season_ppg,
+      minutes_multiplier: expectedMinutes / avgMinutes,
+      expected_minutes: expectedMinutes,
+      avg_minutes: avgMinutes
+    };
   } catch (error) {
     console.error("Base projection error:", error);
     return {
       success: false,
       projection: 0,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -206,13 +172,19 @@ export async function calculateEdge(
   minEdge: number = 0.5
 ): Promise<EdgeCalculationResult> {
   try {
-    const result = (await executePythonAnalytics("edge_calculation", {
-      projection,
-      line,
-      min_edge: minEdge,
-    })) as EdgeCalculationResult;
+    const result = analyticsEngine.calculateEdge(projection, line, minEdge);
 
-    return result;
+    return {
+      success: true,
+      edge: result.edge,
+      edge_pct: result.edgePct,
+      recommendation: result.recommendation as EdgeCalculationResult["recommendation"],
+      confidence: result.confidence,
+      expected_value: result.expectedValue,
+      is_profitable: result.isProfitable,
+      projection,
+      line
+    };
   } catch (error) {
     console.error("Edge calculation error:", error);
     return {
@@ -223,7 +195,7 @@ export async function calculateEdge(
       confidence: 0,
       expected_value: 0,
       is_profitable: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -235,11 +207,61 @@ export async function analyzeVariance(
   gameLogs: number[]
 ): Promise<VarianceAnalysisResult> {
   try {
-    const result = (await executePythonAnalytics("variance_analysis", {
-      game_logs: gameLogs,
-    })) as VarianceAnalysisResult;
+    if (!gameLogs || gameLogs.length < 3) {
+      return {
+        success: false,
+        mean: 0,
+        std_dev: 0,
+        variance: 0,
+        cv: 0,
+        consistency: "MODERATE",
+        min: 0,
+        max: 0,
+        p25: 0,
+        p75: 0,
+        games_analyzed: 0,
+        error: "Insufficient game data (need at least 3 games)"
+      };
+    }
 
-    return result;
+    const mean = gameLogs.reduce((a, b) => a + b, 0) / gameLogs.length;
+    const squareDiffs = gameLogs.map(v => Math.pow(v - mean, 2));
+    const variance = squareDiffs.reduce((a, b) => a + b, 0) / gameLogs.length;
+    const stdDev = Math.sqrt(variance);
+    const cv = (stdDev / mean) * 100;
+
+    // Determine consistency rating
+    let consistency: VarianceAnalysisResult["consistency"];
+    if (cv < 15) {
+      consistency = "VERY_CONSISTENT";
+    } else if (cv < 25) {
+      consistency = "CONSISTENT";
+    } else if (cv < 35) {
+      consistency = "MODERATE";
+    } else if (cv < 50) {
+      consistency = "INCONSISTENT";
+    } else {
+      consistency = "VERY_INCONSISTENT";
+    }
+
+    // Calculate percentiles
+    const sorted = [...gameLogs].sort((a, b) => a - b);
+    const p25 = sorted[Math.floor(sorted.length * 0.25)];
+    const p75 = sorted[Math.floor(sorted.length * 0.75)];
+
+    return {
+      success: true,
+      mean: Math.round(mean * 100) / 100,
+      std_dev: Math.round(stdDev * 100) / 100,
+      variance: Math.round(variance * 100) / 100,
+      cv: Math.round(cv * 100) / 100,
+      consistency,
+      min: Math.round(Math.min(...gameLogs) * 100) / 100,
+      max: Math.round(Math.max(...gameLogs) * 100) / 100,
+      p25: Math.round(p25 * 100) / 100,
+      p75: Math.round(p75 * 100) / 100,
+      games_analyzed: gameLogs.length
+    };
   } catch (error) {
     console.error("Variance analysis error:", error);
     return {
@@ -254,7 +276,7 @@ export async function analyzeVariance(
       p25: 0,
       p75: 0,
       games_analyzed: 0,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -267,12 +289,56 @@ export async function calculateHitRate(
   line: number
 ): Promise<HitRateResult> {
   try {
-    const result = (await executePythonAnalytics("hit_rate", {
-      game_logs: gameLogs,
-      line,
-    })) as HitRateResult;
+    if (!gameLogs || gameLogs.length === 0) {
+      return {
+        success: false,
+        hit_rate: 0,
+        hit_rate_pct: 0,
+        hits: 0,
+        total_games: 0,
+        recent_hit_rate: 0,
+        recent_hit_rate_pct: 0,
+        trend: "STABLE",
+        confidence: 0,
+        line,
+        error: "No game data provided"
+      };
+    }
 
-    return result;
+    const hits = gameLogs.filter(ppg => ppg > line).length;
+    const totalGames = gameLogs.length;
+    const hitRate = hits / totalGames;
+
+    // Calculate recent form (last 5 games)
+    const recentLogs = gameLogs.slice(-5);
+    const recentHits = recentLogs.filter(ppg => ppg > line).length;
+    const recentHitRate = recentHits / recentLogs.length;
+
+    // Determine trend
+    let trend: HitRateResult["trend"];
+    if (recentHitRate > hitRate + 0.1) {
+      trend = "IMPROVING";
+    } else if (recentHitRate < hitRate - 0.1) {
+      trend = "DECLINING";
+    } else {
+      trend = "STABLE";
+    }
+
+    // Calculate confidence based on sample size
+    const confidence = Math.min(0.95, 0.5 + (totalGames / 50));
+
+    return {
+      success: true,
+      hit_rate: Math.round(hitRate * 1000) / 1000,
+      hit_rate_pct: Math.round(hitRate * 1000) / 10,
+      hits,
+      total_games: totalGames,
+      recent_hit_rate: Math.round(recentHitRate * 1000) / 1000,
+      recent_hit_rate_pct: Math.round(recentHitRate * 1000) / 10,
+      trend,
+      confidence: Math.round(confidence * 1000) / 1000,
+      line
+    };
   } catch (error) {
     console.error("Hit rate error:", error);
     return {
@@ -286,7 +352,7 @@ export async function calculateHitRate(
       trend: "STABLE",
       confidence: 0,
       line,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -301,13 +367,7 @@ export async function runMonteCarlo(
   nSims: number = 10000
 ): Promise<MonteCarloResult> {
   try {
-    const result = (await executePythonAnalytics("monte_carlo", {
-      base_projection: baseProjection,
-      std_dev: stdDev,
-      line,
-      n_sims: nSims,
-    })) as MonteCarloResult;
-
+    const result = analyticsEngine.runMonteCarlo(baseProjection, stdDev, line, nSims);
     return result;
   } catch (error) {
     console.error("Monte Carlo error:", error);
@@ -323,7 +383,7 @@ export async function runMonteCarlo(
       p_under: 0.5,
       line,
       simulations: 0,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -336,12 +396,55 @@ export async function runFullAnalysis(
   line: number
 ): Promise<FullAnalysisResult> {
   try {
-    const result = (await executePythonAnalytics("full_analysis", {
-      ...playerData,
-      line,
-    })) as FullAnalysisResult;
+    const playerDataForEngine: PlayerData = {
+      ppg: playerData.season_ppg,
+      minutesPerGame: playerData.avg_minutes
+    };
 
-    return result;
+    const context: GameContext = {
+      isHome: playerData.is_home,
+      isFavorite: playerData.is_favorite,
+      spread: playerData.spread,
+      total: playerData.total,
+      daysRest: playerData.days_rest,
+      isBackToBack: playerData.is_back_to_back
+    };
+
+    const result = analyticsEngine.analyzeProp("points", playerDataForEngine, line, context);
+
+    if (!result.success) {
+      return {
+        success: false,
+        player_name: playerData.name,
+        final_projection: 0,
+        line,
+        edge: 0,
+        recommendation: "PASS",
+        confidence: 0,
+        expected_value: 0,
+        base_projection: 0,
+        context_adjusted: 0,
+        rest_adjusted: 0,
+        factors_applied: [],
+        error: result.error
+      };
+    }
+
+    return {
+      success: true,
+      player_name: playerData.name,
+      final_projection: result.projection || 0,
+      line,
+      edge: result.edge || 0,
+      recommendation: result.recommendation || "PASS",
+      confidence: result.confidence || 0,
+      expected_value: result.edge_pct || 0,
+      base_projection: playerData.season_ppg,
+      context_adjusted: result.projection || 0,
+      rest_adjusted: result.projection || 0,
+      monte_carlo: result.monte_carlo,
+      factors_applied: result.factors_applied || []
+    };
   } catch (error) {
     console.error("Full analysis error:", error);
     return {
@@ -357,29 +460,7 @@ export async function runFullAnalysis(
       context_adjusted: 0,
       rest_adjusted: 0,
       factors_applied: [],
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-/**
- * Run batch analysis for multiple players
- */
-export async function runBatchAnalysis(
-  players: PlayerPropsInput[]
-): Promise<{ success: boolean; results: FullAnalysisResult[]; count: number }> {
-  try {
-    const result = (await executePythonAnalytics("batch_analysis", {
-      players,
-    })) as { success: boolean; results: FullAnalysisResult[]; count: number };
-
-    return result;
-  } catch (error) {
-    console.error("Batch analysis error:", error);
-    return {
-      success: false,
-      results: [],
-      count: 0,
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
@@ -400,7 +481,6 @@ export async function analyzePlayerByName(
   }
 ): Promise<FullAnalysisResult> {
   try {
-    // Get player from database
     const player = await getPlayerByName(playerName);
 
     if (!player) {
@@ -417,15 +497,13 @@ export async function analyzePlayerByName(
         context_adjusted: 0,
         rest_adjusted: 0,
         factors_applied: [],
-        error: `Player not found: ${playerName}`,
+        error: `Player not found: ${playerName}`
       };
     }
 
-    // Parse PPG and minutes from string fields
     const ppg = player.ppg ? parseFloat(player.ppg) : 0;
     const minutes = player.minutesPerGame ? parseFloat(player.minutesPerGame) : 30;
 
-    // Build player data from database record
     const playerData: PlayerPropsInput = {
       name: `${player.firstName} ${player.lastName}`,
       season_ppg: ppg,
@@ -437,8 +515,8 @@ export async function analyzePlayerByName(
       total: gameContext?.total ?? 220,
       days_rest: gameContext?.daysRest ?? 2,
       is_back_to_back: gameContext?.isBackToBack ?? false,
-      game_logs: [], // Would need game logs from a separate source
-      line,
+      game_logs: [],
+      line
     };
 
     return await runFullAnalysis(playerData, line);
@@ -457,52 +535,108 @@ export async function analyzePlayerByName(
       context_adjusted: 0,
       rest_adjusted: 0,
       factors_applied: [],
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
 
 /**
- * Get top value plays from all players
+ * Universal prop analyzer - handles all bet types
  */
-export async function getTopValuePlays(
-  lines: Map<string, number>,
-  minEdge: number = 1.0,
-  limit: number = 10
-): Promise<FullAnalysisResult[]> {
+export async function analyzeProp(
+  betType: string,
+  playerData: Record<string, unknown>,
+  line: number
+): Promise<AnalysisResult> {
   try {
-    const allPlayers = await getAllPlayers();
-    const analyses: FullAnalysisResult[] = [];
+    const enginePlayerData: PlayerData = {
+      ppg: Number(playerData.ppg || playerData.season_ppg || 0),
+      rpg: Number(playerData.rpg || playerData.season_rpg || 0),
+      apg: Number(playerData.apg || playerData.season_apg || 0),
+      spg: Number(playerData.spg || playerData.season_spg || 0),
+      bpg: Number(playerData.bpg || playerData.season_bpg || 0),
+      tpm: Number(playerData.tpm || playerData.season_tpm || 0),
+      minutesPerGame: Number(playerData.avg_minutes || playerData.minutesPerGame || 30)
+    };
 
-    for (const player of allPlayers) {
-      const playerName = `${player.firstName} ${player.lastName}`;
-      const line = lines.get(playerName);
+    const context: GameContext = {
+      isHome: Boolean(playerData.is_home ?? true),
+      isFavorite: Boolean(playerData.is_favorite ?? true),
+      spread: Number(playerData.spread || 0),
+      total: Number(playerData.total || 220),
+      daysRest: Number(playerData.days_rest || 2),
+      isBackToBack: Boolean(playerData.is_back_to_back || false)
+    };
 
-      if (!line || !player.ppg) continue;
-
-      // Parse PPG and minutes from string fields
-      const ppg = parseFloat(player.ppg);
-      const minutes = player.minutesPerGame ? parseFloat(player.minutesPerGame) : 30;
-
-      const playerData: PlayerPropsInput = {
-        name: playerName,
-        season_ppg: ppg,
-        avg_minutes: minutes,
-        line,
-      };
-
-      const analysis = await runFullAnalysis(playerData, line);
-
-      if (analysis.success && analysis.edge >= minEdge) {
-        analyses.push(analysis);
-      }
-    }
-
-    // Sort by edge descending and return top N
-    return analyses.sort((a, b) => b.edge - a.edge).slice(0, limit);
+    return analyticsEngine.analyzeProp(betType, enginePlayerData, line, context);
   } catch (error) {
-    console.error("Get top value plays error:", error);
-    return [];
+    console.error("Analyze prop error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+/**
+ * Combined props analyzer (PRA, PA, PR, RA, S+B)
+ */
+export async function analyzeCombinedProp(
+  propType: string,
+  playerData: Record<string, unknown>,
+  line: number
+): Promise<CombinedPropResult> {
+  try {
+    const enginePlayerData: PlayerData = {
+      ppg: Number(playerData.ppg || playerData.season_ppg || 0),
+      rpg: Number(playerData.rpg || playerData.season_rpg || 0),
+      apg: Number(playerData.apg || playerData.season_apg || 0),
+      spg: Number(playerData.spg || playerData.season_spg || 0),
+      bpg: Number(playerData.bpg || playerData.season_bpg || 0)
+    };
+
+    const context: GameContext = {
+      isHome: Boolean(playerData.is_home ?? true),
+      isFavorite: Boolean(playerData.is_favorite ?? true),
+      daysRest: Number(playerData.days_rest || 2),
+      isBackToBack: Boolean(playerData.is_back_to_back || false)
+    };
+
+    return analyticsEngine.analyzeCombinedProp(propType, enginePlayerData, line, context);
+  } catch (error) {
+    console.error("Combined prop error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+/**
+ * Game line analyzer (ML, spread, total, quarters, halves)
+ */
+export async function analyzeGameLine(
+  lineType: string,
+  gameData: Record<string, unknown>,
+  line: number
+): Promise<GameLineResult> {
+  try {
+    const engineGameData = {
+      homeTeam: String(gameData.home_team || gameData.homeTeam || ""),
+      awayTeam: String(gameData.away_team || gameData.awayTeam || ""),
+      homeRating: Number(gameData.home_rating || gameData.homeRating || 110),
+      awayRating: Number(gameData.away_rating || gameData.awayRating || 110),
+      homePace: Number(gameData.home_pace || gameData.homePace || 100),
+      awayPace: Number(gameData.away_pace || gameData.awayPace || 100)
+    };
+
+    return analyticsEngine.analyzeGameLine(lineType, engineGameData, line);
+  } catch (error) {
+    console.error("Game line error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
   }
 }
 
@@ -525,23 +659,28 @@ export async function calculatePropSpecific(
   error?: string;
 }> {
   try {
-    const result = (await executePythonAnalytics("prop_specific", {
-      prop_type: propType,
-      position,
-      team_avg: teamAvg,
-      pace_mult: paceMult,
-    })) as {
-      success: boolean;
-      prop_type: string;
-      projection: number;
-      position: string;
-      position_share: number;
-      team_avg: number;
-      pace_mult: number;
-      error?: string;
+    // Position share percentages for different stats
+    const positionShares: Record<string, Record<string, number>> = {
+      rebounds: { C: 0.25, PF: 0.20, SF: 0.15, SG: 0.12, PG: 0.10 },
+      assists: { PG: 0.30, SG: 0.20, SF: 0.18, PF: 0.15, C: 0.12 },
+      steals: { PG: 0.22, SG: 0.22, SF: 0.20, PF: 0.18, C: 0.15 },
+      blocks: { C: 0.35, PF: 0.25, SF: 0.15, SG: 0.10, PG: 0.08 }
     };
 
-    return result;
+    const shares = positionShares[propType.toLowerCase()] || positionShares.rebounds;
+    const positionShare = shares[position.toUpperCase()] || 0.15;
+    
+    const projection = teamAvg * positionShare * paceMult;
+
+    return {
+      success: true,
+      prop_type: propType,
+      projection: Math.round(projection * 100) / 100,
+      position,
+      position_share: positionShare,
+      team_avg: teamAvg,
+      pace_mult: paceMult
+    };
   } catch (error) {
     console.error("Prop specific error:", error);
     return {
@@ -552,168 +691,78 @@ export async function calculatePropSpecific(
       position_share: 0,
       team_avg: teamAvg,
       pace_mult: paceMult,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
 
 /**
- * Universal prop analyzer - handles all bet types
+ * Get top value plays from all players
  */
-export async function analyzeProp(
-  betType: string,
-  playerData: Record<string, unknown>,
-  line: number
-): Promise<{
-  success: boolean;
-  bet_type?: string;
-  projection?: number;
-  line?: number;
-  edge?: number;
-  edge_pct?: number;
-  recommendation?: string;
-  confidence?: number;
-  factors_applied?: string[];
-  probability?: { over: number; under: number };
-  monte_carlo?: unknown;
-  scripts_used?: string[];
-  error?: string;
-}> {
+export async function getTopValuePlays(
+  lines: Map<string, number>,
+  minEdge: number = 1.0,
+  limit: number = 10
+): Promise<FullAnalysisResult[]> {
   try {
-    const result = await executePythonAnalytics("analyze_prop", {
-      bet_type: betType,
-      ...playerData,
-      line,
-    });
+    const allPlayers = await getAllPlayers();
+    const analyses: FullAnalysisResult[] = [];
 
-    return result as {
-      success: boolean;
-      bet_type?: string;
-      projection?: number;
-      line?: number;
-      edge?: number;
-      edge_pct?: number;
-      recommendation?: string;
-      confidence?: number;
-      factors_applied?: string[];
-      probability?: { over: number; under: number };
-      monte_carlo?: unknown;
-      scripts_used?: string[];
-      error?: string;
-    };
+    for (const player of allPlayers) {
+      const playerName = `${player.firstName} ${player.lastName}`;
+      const line = lines.get(playerName);
+
+      if (!line || !player.ppg) continue;
+
+      const ppg = parseFloat(player.ppg);
+      const minutes = player.minutesPerGame ? parseFloat(player.minutesPerGame) : 30;
+
+      const playerData: PlayerPropsInput = {
+        name: playerName,
+        season_ppg: ppg,
+        avg_minutes: minutes,
+        line
+      };
+
+      const analysis = await runFullAnalysis(playerData, line);
+
+      if (analysis.success && analysis.edge >= minEdge) {
+        analyses.push(analysis);
+      }
+    }
+
+    return analyses.sort((a, b) => b.edge - a.edge).slice(0, limit);
   } catch (error) {
-    console.error("Analyze prop error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    console.error("Get top value plays error:", error);
+    return [];
   }
 }
 
 /**
- * Combined props analyzer (PRA, PA, PR, RA, S+B)
+ * Run batch analysis for multiple players
  */
-export async function analyzeCombinedProp(
-  propType: string,
-  playerData: Record<string, unknown>,
-  line: number
-): Promise<{
-  success: boolean;
-  prop_type?: string;
-  projection?: number;
-  line?: number;
-  edge?: number;
-  edge_pct?: number;
-  recommendation?: string;
-  confidence?: number;
-  components?: Record<string, number>;
-  base_projection?: number;
-  factors_applied?: string[];
-  scripts_used?: string[];
-  error?: string;
-}> {
+export async function runBatchAnalysis(
+  players: PlayerPropsInput[]
+): Promise<{ success: boolean; results: FullAnalysisResult[]; count: number }> {
   try {
-    const result = await executePythonAnalytics("combined_prop", {
-      prop_type: propType,
-      ...playerData,
-      line,
-    });
+    const results: FullAnalysisResult[] = [];
 
-    return result as {
-      success: boolean;
-      prop_type?: string;
-      projection?: number;
-      line?: number;
-      edge?: number;
-      edge_pct?: number;
-      recommendation?: string;
-      confidence?: number;
-      components?: Record<string, number>;
-      base_projection?: number;
-      factors_applied?: string[];
-      scripts_used?: string[];
-      error?: string;
+    for (const player of players) {
+      const analysis = await runFullAnalysis(player, player.line || 0);
+      results.push(analysis);
+    }
+
+    return {
+      success: true,
+      results,
+      count: results.length
     };
   } catch (error) {
-    console.error("Combined prop error:", error);
+    console.error("Batch analysis error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-/**
- * Game line analyzer (ML, spread, total, quarters, halves)
- */
-export async function analyzeGameLine(
-  lineType: string,
-  gameData: Record<string, unknown>,
-  line: number
-): Promise<{
-  success: boolean;
-  line_type?: string;
-  projection?: number;
-  line?: number;
-  edge?: number;
-  edge_pct?: number;
-  recommendation?: string;
-  confidence?: number;
-  expected_margin?: number;
-  implied_prob?: number;
-  period?: string;
-  factors_applied?: string[];
-  scripts_used?: string[];
-  error?: string;
-}> {
-  try {
-    const result = await executePythonAnalytics("game_line", {
-      line_type: lineType,
-      ...gameData,
-      line,
-    });
-
-    return result as {
-      success: boolean;
-      line_type?: string;
-      projection?: number;
-      line?: number;
-      edge?: number;
-      edge_pct?: number;
-      recommendation?: string;
-      confidence?: number;
-      expected_margin?: number;
-      implied_prob?: number;
-      period?: string;
-      factors_applied?: string[];
-      scripts_used?: string[];
-      error?: string;
-    };
-  } catch (error) {
-    console.error("Game line error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      results: [],
+      count: 0
     };
   }
 }
