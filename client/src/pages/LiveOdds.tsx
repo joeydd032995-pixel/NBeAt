@@ -26,8 +26,8 @@ export default function LiveOdds() {
     return (
       <div className="container mx-auto py-8">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent"></div>
-          <p className="mt-4 text-cyan-400">Loading live odds...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-secondary">Loading live odds...</p>
         </div>
       </div>
     );
@@ -37,13 +37,13 @@ export default function LiveOdds() {
     return (
       <div className="container mx-auto py-8">
         <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
+          <h1 className="text-5xl font-bold text-primary drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
             Live NBA Odds
           </h1>
-          <p className="text-gray-400">No upcoming games available</p>
+          <p className="text-muted-foreground">No upcoming games available</p>
           <Button
             onClick={() => refetch()}
-            className="bg-cyan-500 hover:bg-cyan-600 text-black"
+            className="bg-secondary hover:bg-secondary/90 text-black"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -58,16 +58,16 @@ export default function LiveOdds() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-bold text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
+          <h1 className="text-5xl font-bold text-primary drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
             Live NBA Odds
           </h1>
-          <p className="text-xl text-cyan-400 mt-2">
+          <p className="text-xl text-secondary mt-2">
             Real-time betting lines from major sportsbooks
           </p>
         </div>
         <Button
           onClick={() => refetch()}
-          className="bg-cyan-500 hover:bg-cyan-600 text-black"
+          className="bg-secondary hover:bg-secondary/90 text-black"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -79,16 +79,16 @@ export default function LiveOdds() {
         {games.map((game) => (
           <Card
             key={game.id}
-            className="bg-slate-900/50 border-cyan-500/30 p-6 hover:border-pink-500/50 transition-all"
+            className="bg-card border-secondary/30 p-6 hover:border-primary/50 transition-all"
           >
             {/* Game Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {formatDate(game.commence_time)}
                 </p>
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 {game.bookmakers.length} bookmakers
               </div>
             </div>
@@ -97,11 +97,11 @@ export default function LiveOdds() {
             <div className="grid grid-cols-2 gap-8 mb-6">
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-white">{game.away_team}</h3>
-                <p className="text-xs text-gray-400 mt-1">Away</p>
+                <p className="text-xs text-muted-foreground mt-1">Away</p>
               </div>
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-white">{game.home_team}</h3>
-                <p className="text-xs text-gray-400 mt-1">Home</p>
+                <p className="text-xs text-muted-foreground mt-1">Home</p>
               </div>
             </div>
 
@@ -111,7 +111,7 @@ export default function LiveOdds() {
                 key={bookmaker.key}
                 className="border-t border-gray-700 pt-4 mt-4"
               >
-                <p className="text-sm font-bold text-pink-500 mb-3">
+                <p className="text-sm font-bold text-primary mb-3">
                   {bookmaker.title}
                 </p>
 
@@ -119,7 +119,7 @@ export default function LiveOdds() {
                   {/* Moneyline */}
                   {bookmaker.markets.find((m) => m.key === "h2h") && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-2">Moneyline</p>
+                      <p className="text-xs text-muted-foreground mb-2">Moneyline</p>
                       <div className="space-y-1">
                         {bookmaker.markets
                           .find((m) => m.key === "h2h")
@@ -131,7 +131,7 @@ export default function LiveOdds() {
                               <span className="text-xs text-gray-300">
                                 {outcome.name === game.away_team ? "Away" : "Home"}
                               </span>
-                              <span className="text-sm font-bold text-cyan-400">
+                              <span className="text-sm font-bold text-secondary">
                                 {formatOdds(outcome.price)}
                               </span>
                             </div>
@@ -143,7 +143,7 @@ export default function LiveOdds() {
                   {/* Spreads */}
                   {bookmaker.markets.find((m) => m.key === "spreads") && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-2">Spread</p>
+                      <p className="text-xs text-muted-foreground mb-2">Spread</p>
                       <div className="space-y-1">
                         {bookmaker.markets
                           .find((m) => m.key === "spreads")
@@ -155,13 +155,13 @@ export default function LiveOdds() {
                               <span className="text-xs text-gray-300">
                                 {outcome.name === game.away_team ? "Away" : "Home"}{" "}
                                 {outcome.point !== undefined && (
-                                  <span className="text-pink-400">
+                                  <span className="text-primary">
                                     {outcome.point > 0 ? "+" : ""}
                                     {outcome.point}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-sm font-bold text-cyan-400">
+                              <span className="text-sm font-bold text-secondary">
                                 {formatOdds(outcome.price)}
                               </span>
                             </div>
@@ -173,7 +173,7 @@ export default function LiveOdds() {
                   {/* Totals */}
                   {bookmaker.markets.find((m) => m.key === "totals") && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-2">Total</p>
+                      <p className="text-xs text-muted-foreground mb-2">Total</p>
                       <div className="space-y-1">
                         {bookmaker.markets
                           .find((m) => m.key === "totals")
@@ -185,10 +185,10 @@ export default function LiveOdds() {
                               <span className="text-xs text-gray-300">
                                 {outcome.name}{" "}
                                 {outcome.point !== undefined && (
-                                  <span className="text-purple-400">{outcome.point}</span>
+                                  <span className="text-accent">{outcome.point}</span>
                                 )}
                               </span>
-                              <span className="text-sm font-bold text-cyan-400">
+                              <span className="text-sm font-bold text-secondary">
                                 {formatOdds(outcome.price)}
                               </span>
                             </div>
@@ -204,24 +204,24 @@ export default function LiveOdds() {
       </div>
 
       {/* Info */}
-      <Card className="bg-slate-900/50 border-cyan-500/30 p-6">
-        <h3 className="text-lg font-bold text-pink-500 mb-4">How to Read the Odds</h3>
+      <Card className="bg-card border-secondary/30 p-6">
+        <h3 className="text-lg font-bold text-primary mb-4">How to Read the Odds</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="font-bold text-cyan-400">Moneyline</p>
-            <p className="text-gray-400">
+            <p className="font-bold text-secondary">Moneyline</p>
+            <p className="text-muted-foreground">
               Bet on which team wins. Negative odds = favorite, positive = underdog.
             </p>
           </div>
           <div>
-            <p className="font-bold text-pink-400">Spread</p>
-            <p className="text-gray-400">
+            <p className="font-bold text-primary">Spread</p>
+            <p className="text-muted-foreground">
               Bet on margin of victory. Favorite must win by more than the spread.
             </p>
           </div>
           <div>
-            <p className="font-bold text-purple-400">Total (Over/Under)</p>
-            <p className="text-gray-400">
+            <p className="font-bold text-accent">Total (Over/Under)</p>
+            <p className="text-muted-foreground">
               Bet on combined score. Over = more points, Under = fewer points.
             </p>
           </div>

@@ -103,7 +103,7 @@ export default function ParlayBuilder() {
         </Link>
         
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-primary neon-glow-pink mb-2">PARLAY BUILDER</h1>
+          <h1 className="text-4xl font-bold text-primary  mb-2">PARLAY BUILDER</h1>
           <p className="text-muted-foreground mb-8">Build multi-leg parlays and calculate potential payouts</p>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

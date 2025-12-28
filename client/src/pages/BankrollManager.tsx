@@ -13,7 +13,7 @@ export default function BankrollManager() {
             Back to Home
           </Button>
         </Link>
-        <h1 className="text-4xl font-bold text-primary neon-glow-pink mb-8">BANKROLL MANAGER</h1>
+        <h1 className="text-4xl font-bold text-primary  mb-8">BANKROLL MANAGER</h1>
         <Card className="bg-card/50 backdrop-blur">
           <CardHeader>
             <CardTitle>Manage Your Bankroll</CardTitle>

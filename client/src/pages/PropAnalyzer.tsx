@@ -39,18 +39,18 @@ export function PropAnalyzer() {
       <div className="container max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-pink-500 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
             Player Prop Analyzer
           </h1>
-          <p className="text-cyan-400 text-lg">
+          <p className="text-secondary text-lg">
             Analyze prop bets with historical hit rates and AI-powered recommendations
           </p>
         </div>
         
         {/* Search */}
-        <Card className="mb-8 bg-slate-900/50 border-cyan-500/30">
+        <Card className="mb-8 bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Search Player</CardTitle>
+            <CardTitle className="text-secondary">Search Player</CardTitle>
             <CardDescription>Select a player to analyze prop betting opportunities</CardDescription>
           </CardHeader>
           <CardContent>
@@ -59,35 +59,35 @@ export function PropAnalyzer() {
               selectedPlayer={selectedPlayer}
               placeholder="Search for any NBA player..."
               showPositionFilter={true}
-              accentColor="cyan"
+              accentColor="secondary"
             />
           </CardContent>
         </Card>
         
         {/* Player Analysis */}
         {isLoading && (
-          <Card className="mb-8 bg-slate-900/50 border-cyan-500/30">
+          <Card className="mb-8 bg-card border-secondary/30">
             <CardContent className="p-8 text-center">
-              <p className="text-cyan-400">Analyzing props...</p>
+              <p className="text-secondary">Analyzing props...</p>
             </CardContent>
           </Card>
         )}
         
         {analysis && (
           <div className="mb-8">
-            <Card className="bg-slate-900/50 border-pink-500/30 mb-4">
+            <Card className="bg-card border-primary/30 mb-4">
               <CardHeader>
-                <CardTitle className="text-2xl text-pink-400">{analysis.player.fullName}</CardTitle>
+                <CardTitle className="text-2xl text-primary">{analysis.player.fullName}</CardTitle>
                 <CardDescription>{analysis.overallRecommendation}</CardDescription>
               </CardHeader>
             </Card>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {analysis.props.map((prop, idx) => (
-                <Card key={idx} className="bg-slate-900/50 border-cyan-500/30">
+                <Card key={idx} className="bg-card border-secondary/30">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg text-cyan-400 capitalize">{prop.propType}</CardTitle>
+                      <CardTitle className="text-lg text-secondary capitalize">{prop.propType}</CardTitle>
                       {getRecommendationIcon(prop.recommendation)}
                     </div>
                     <CardDescription>{prop.bookmaker}</CardDescription>
@@ -144,16 +144,16 @@ export function PropAnalyzer() {
         )}
         
         {/* Top Opportunities */}
-        <Card className="bg-slate-900/50 border-cyan-500/30">
+        <Card className="bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Top Prop Opportunities</CardTitle>
+            <CardTitle className="text-secondary">Top Prop Opportunities</CardTitle>
             <CardDescription>High-confidence prop bets across all players</CardDescription>
           </CardHeader>
           <CardContent>
             {topOpportunities && topOpportunities.length > 0 ? (
               <div className="space-y-3">
                 {topOpportunities.map((opp, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                  <div key={idx} className="flex items-center justify-between p-4 bg-input/50 rounded-lg border border-slate-700">
                     <div className="flex-1">
                       <p className="font-semibold text-white">{opp.playerName}</p>
                       <p className="text-sm text-gray-400 capitalize">

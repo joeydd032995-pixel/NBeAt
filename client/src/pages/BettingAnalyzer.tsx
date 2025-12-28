@@ -514,7 +514,7 @@ export default function BettingAnalyzer() {
                       selectedPlayer={selectedPlayer}
                       placeholder="Search for a player..."
                       showPositionFilter={true}
-                      accentColor="purple"
+                      accentColor="primary"
                     />
                   </div>
                   
@@ -527,7 +527,7 @@ export default function BettingAnalyzer() {
                         selectedPlayer={selectedPlayer2}
                         placeholder="Search for second player..."
                         showPositionFilter={true}
-                        accentColor="purple"
+                        accentColor="secondary"
                       />
                     </div>
                   )}

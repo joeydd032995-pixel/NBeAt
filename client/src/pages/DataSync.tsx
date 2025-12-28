@@ -93,7 +93,7 @@ export default function DataSync() {
 
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-primary neon-glow-pink">
+            <h1 className="text-4xl md:text-5xl font-bold text-primary ">
               DATA SYNCHRONIZATION
             </h1>
             <p className="text-lg text-muted-foreground">
@@ -228,7 +228,7 @@ export default function DataSync() {
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center space-y-2">
-                  <div className="text-3xl font-bold text-primary neon-glow-pink">
+                  <div className="text-3xl font-bold text-primary ">
                     30
                   </div>
                   <div className="text-sm text-muted-foreground">NBA Teams</div>

@@ -317,7 +317,7 @@ export default function PropsAnalytics() {
 
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-primary neon-glow-pink">
+            <h1 className="text-4xl md:text-5xl font-bold text-primary ">
               PROPS ANALYTICS
             </h1>
             <p className="text-lg text-muted-foreground">
@@ -333,15 +333,15 @@ export default function PropsAnalytics() {
               showOdds={true}
             />
             {selectedGame && (
-              <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 text-purple-700">
+              <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/30">
+                <div className="flex items-center gap-2 text-primary">
                   <Calendar className="w-4 h-4" />
                   <span className="font-medium">Selected Game:</span>
                   <span>{selectedGame.awayTeam} @ {selectedGame.homeTeam}</span>
-                  <span className="text-purple-500">• {selectedGame.displayTime}</span>
+                  <span className="text-primary">• {selectedGame.displayTime}</span>
                 </div>
                 {selectedGame.total && (
-                  <p className="text-sm text-purple-600 mt-1">
+                  <p className="text-sm text-primary mt-1">
                     O/U: {selectedGame.total} | Spread auto-populated to analysis form
                   </p>
                 )}

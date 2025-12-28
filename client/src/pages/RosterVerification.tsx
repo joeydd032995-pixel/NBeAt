@@ -21,7 +21,7 @@ export default function RosterVerification() {
 
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-primary neon-glow-pink">
+            <h1 className="text-4xl md:text-5xl font-bold text-primary ">
               ROSTER VERIFICATION
             </h1>
             <p className="text-lg text-muted-foreground">

@@ -122,7 +122,7 @@ export default function AIAssistant() {
         </Link>
 
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-primary neon-glow-pink mb-2">AI BETTING ASSISTANT</h1>
+          <h1 className="text-4xl font-bold text-primary  mb-2">AI BETTING ASSISTANT</h1>
           <p className="text-muted-foreground mb-8">Get AI-powered insights with access to all platform data</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

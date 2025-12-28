@@ -27,21 +27,21 @@ export default function PlayerStats() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-pink-400" style={{ textShadow: "0 0 20px rgba(236, 72, 153, 0.8)" }}>
+          <h1 className="text-4xl font-bold mb-2 text-primary" style={{ textShadow: "0 0 20px rgba(236, 72, 153, 0.8)" }}>
             Player Statistics
           </h1>
-          <p className="text-cyan-400">2025-26 Season Statistics</p>
+          <p className="text-secondary">2025-26 Season Statistics</p>
         </div>
 
         {/* Player Search Dropdown */}
-        <div className="mb-8 p-6 border border-cyan-500/30 rounded-lg bg-slate-900/50">
-          <h3 className="text-cyan-400 font-semibold mb-4">Search Player</h3>
+        <div className="mb-8 p-6 border border-secondary/30 rounded-lg bg-slate-900/50">
+          <h3 className="text-secondary font-semibold mb-4">Search Player</h3>
           <PlayerSearchDropdown
             onPlayerSelect={handlePlayerSelect}
             selectedPlayer={selectedPlayer}
             placeholder="Search for any NBA player..."
             showPositionFilter={true}
-            accentColor="pink"
+            accentColor="primary"
           />
         </div>
 
@@ -49,8 +49,8 @@ export default function PlayerStats() {
         {isLoadingRandom && !displayPlayer && (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <Loader2 className="animate-spin mx-auto mb-4 text-pink-500" size={40} />
-              <p className="text-cyan-400">Loading player statistics...</p>
+              <Loader2 className="animate-spin mx-auto mb-4 text-primary" size={40} />
+              <p className="text-secondary">Loading player statistics...</p>
             </div>
           </div>
         )}
@@ -59,14 +59,14 @@ export default function PlayerStats() {
         {displayPlayer && (
           <div className="space-y-6">
             {/* Player Header */}
-            <div className="p-6 border border-cyan-500/30 rounded-lg bg-slate-900/50">
+            <div className="p-6 border border-secondary/30 rounded-lg bg-slate-900/50">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-pink-400 mb-2">{displayPlayer.fullName}</h2>
-                  <p className="text-cyan-400">Position: {displayPlayer.position || "N/A"}</p>
+                  <h2 className="text-3xl font-bold text-primary mb-2">{displayPlayer.fullName}</h2>
+                  <p className="text-secondary">Position: {displayPlayer.position || "N/A"}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-cyan-400">Games Played: {displayPlayer.gamesPlayed || "N/A"}</p>
+                  <p className="text-secondary">Games Played: {displayPlayer.gamesPlayed || "N/A"}</p>
                   <p className="text-gray-400 text-sm">
                     Last Updated: {new Date(displayPlayer.updatedAt).toLocaleDateString()}
                   </p>
@@ -131,11 +131,11 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, color }: StatCardProps) {
-  const colorClass = color === "pink" ? "text-pink-400" : "text-cyan-400";
-  const borderClass = color === "pink" ? "border-pink-500/30" : "border-cyan-500/30";
+  const colorClass = color === "pink" ? "text-primary" : "text-secondary";
+  const borderClass = color === "pink" ? "border-primary/30" : "border-secondary/30";
 
   return (
-    <div className={`p-4 border ${borderClass} rounded-lg bg-slate-800/50 text-center`}>
+    <div className={`p-4 border ${borderClass} rounded-lg bg-card text-center`}>
       <p className="text-gray-400 text-sm mb-2">{label}</p>
       <p className={`text-2xl font-bold ${colorClass}`}>
         {value !== null && value !== undefined ? value : "N/A"}

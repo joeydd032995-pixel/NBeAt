@@ -104,7 +104,7 @@ export function GameSelector({
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Select Game</span>
+          <span className="text-sm font-medium text-foreground">Select Game</span>
           <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
@@ -124,44 +124,44 @@ export function GameSelector({
                 onClick={() => onGameSelect?.(game)}
                 className={`w-full p-2 rounded-lg text-left transition-all ${
                   selectedGameId === game.id
-                    ? "bg-purple-100 border-2 border-purple-500"
-                    : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-secondary/10 border-2 border-secondary"
+                    : "bg-muted hover:bg-muted/80 border border-border"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{getTeamAbbr(game.awayTeam)}</span>
-                    <span className="text-gray-400 text-xs">@</span>
-                    <span className="font-semibold text-sm">{getTeamAbbr(game.homeTeam)}</span>
+                    <span className="font-semibold text-sm text-foreground">{getTeamAbbr(game.awayTeam)}</span>
+                    <span className="text-muted-foreground text-xs">@</span>
+                    <span className="font-semibold text-sm text-foreground">{getTeamAbbr(game.homeTeam)}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{game.displayTime}</span>
+                  <span className="text-xs text-muted-foreground">{game.displayTime}</span>
                 </div>
               </button>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500 text-center py-4">No games scheduled</p>
+          <p className="text-sm text-muted-foreground text-center py-4">No games scheduled</p>
         )}
       </div>
     );
   }
 
   return (
-    <Card>
+    <Card className="bg-card border-border">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Calendar className="h-5 w-5 text-secondary" />
             NBA Games
           </CardTitle>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex rounded-lg border border-border overflow-hidden">
               <button
                 onClick={() => setViewMode("today")}
                 className={`px-3 py-1 text-sm ${
                   viewMode === "today"
-                    ? "bg-purple-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 Today
@@ -170,8 +170,8 @@ export function GameSelector({
                 onClick={() => setViewMode("upcoming")}
                 className={`px-3 py-1 text-sm ${
                   viewMode === "upcoming"
-                    ? "bg-purple-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 Upcoming
@@ -198,17 +198,17 @@ export function GameSelector({
                 onClick={() => onGameSelect?.(game)}
                 className={`p-4 rounded-xl cursor-pointer transition-all ${
                   selectedGameId === game.id
-                    ? "bg-purple-50 border-2 border-purple-500 shadow-md"
-                    : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-secondary/10 border-2 border-secondary shadow-md"
+                    : "bg-muted hover:bg-muted/80 border border-border"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     <span>{game.displayDate} • {game.displayTime}</span>
                   </div>
                   {selectedGameId === game.id && (
-                    <Badge className="bg-purple-600">Selected</Badge>
+                    <Badge className="bg-secondary text-secondary-foreground">Selected</Badge>
                   )}
                 </div>
                 
@@ -216,16 +216,16 @@ export function GameSelector({
                   {/* Away Team */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">{getTeamAbbr(game.awayTeam)}</span>
-                      <span className="text-sm text-gray-500 hidden sm:inline">{game.awayTeam}</span>
+                      <span className="font-bold text-lg text-foreground">{getTeamAbbr(game.awayTeam)}</span>
+                      <span className="text-sm text-muted-foreground hidden sm:inline">{game.awayTeam}</span>
                     </div>
                     {showOdds && game.moneyline && (
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-sm font-medium ${game.moneyline.away < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                        <span className={`text-sm font-medium ${game.moneyline.away < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                           {formatOdds(game.moneyline.away)}
                         </span>
                         {game.spread && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             ({formatSpread(game.spread.away)})
                           </span>
                         )}
@@ -235,9 +235,9 @@ export function GameSelector({
 
                   {/* VS / Total */}
                   <div className="px-4 text-center">
-                    <span className="text-gray-400 font-medium">@</span>
+                    <span className="text-muted-foreground font-medium">@</span>
                     {showOdds && game.total && (
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         O/U {game.total}
                       </div>
                     )}
@@ -246,17 +246,17 @@ export function GameSelector({
                   {/* Home Team */}
                   <div className="flex-1 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <span className="text-sm text-gray-500 hidden sm:inline">{game.homeTeam}</span>
-                      <span className="font-bold text-lg">{getTeamAbbr(game.homeTeam)}</span>
+                      <span className="text-sm text-muted-foreground hidden sm:inline">{game.homeTeam}</span>
+                      <span className="font-bold text-lg text-foreground">{getTeamAbbr(game.homeTeam)}</span>
                     </div>
                     {showOdds && game.moneyline && (
                       <div className="flex items-center justify-end gap-2 mt-1">
                         {game.spread && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             ({formatSpread(game.spread.home)})
                           </span>
                         )}
-                        <span className={`text-sm font-medium ${game.moneyline.home < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                        <span className={`text-sm font-medium ${game.moneyline.home < 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                           {formatOdds(game.moneyline.home)}
                         </span>
                       </div>
@@ -268,13 +268,13 @@ export function GameSelector({
           </div>
         ) : (
           <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">
+            <Calendar className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground">
               {viewMode === "today" 
                 ? "No games scheduled for today" 
                 : "No upcoming games found"}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground/70 mt-1">
               Check back later for updated schedules
             </p>
           </div>

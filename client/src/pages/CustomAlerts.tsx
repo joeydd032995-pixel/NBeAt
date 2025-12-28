@@ -54,15 +54,15 @@ export function CustomAlerts() {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
-        <Card className="max-w-md bg-slate-900/50 border-cyan-500/30">
+        <Card className="max-w-md bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Login Required</CardTitle>
+            <CardTitle className="text-secondary">Login Required</CardTitle>
             <CardDescription>You need to be logged in to create custom alerts</CardDescription>
           </CardHeader>
           <CardContent>
             <Button 
               onClick={() => window.location.href = "/api/oauth/login"}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+              className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/90"
             >
               Login to Continue
             </Button>
@@ -77,18 +77,18 @@ export function CustomAlerts() {
       <div className="container max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-pink-500 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
             Custom Alerts
           </h1>
-          <p className="text-cyan-400 text-lg">
+          <p className="text-secondary text-lg">
             Set personalized thresholds and get notified of betting opportunities
           </p>
         </div>
         
         {/* Create Alert */}
-        <Card className="mb-8 bg-slate-900/50 border-cyan-500/30">
+        <Card className="mb-8 bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Create New Alert</CardTitle>
+            <CardTitle className="text-secondary">Create New Alert</CardTitle>
             <CardDescription>Set up a custom alert for player performance</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -99,14 +99,14 @@ export function CustomAlerts() {
                   placeholder="e.g., Stephen Curry"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  className="bg-slate-800 border-cyan-500/30 text-white"
+                  className="bg-input border-secondary/30 text-white"
                 />
               </div>
               
               <div>
                 <label className="text-sm text-gray-400 mb-2 block">Stat Type</label>
                 <Select value={alertType} onValueChange={(v: any) => setAlertType(v)}>
-                  <SelectTrigger className="bg-slate-800 border-cyan-500/30 text-white">
+                  <SelectTrigger className="bg-input border-secondary/30 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -120,7 +120,7 @@ export function CustomAlerts() {
               <div>
                 <label className="text-sm text-gray-400 mb-2 block">Condition</label>
                 <Select value={condition} onValueChange={setCondition}>
-                  <SelectTrigger className="bg-slate-800 border-cyan-500/30 text-white">
+                  <SelectTrigger className="bg-input border-secondary/30 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -138,7 +138,7 @@ export function CustomAlerts() {
                   placeholder="e.g., 35"
                   value={threshold}
                   onChange={(e) => setThreshold(e.target.value)}
-                  className="bg-slate-800 border-cyan-500/30 text-white"
+                  className="bg-input border-secondary/30 text-white"
                 />
               </div>
               
@@ -149,7 +149,7 @@ export function CustomAlerts() {
                   min="1"
                   value={consecutiveGames}
                   onChange={(e) => setConsecutiveGames(e.target.value)}
-                  className="bg-slate-800 border-cyan-500/30 text-white"
+                  className="bg-input border-secondary/30 text-white"
                 />
               </div>
             </div>
@@ -157,7 +157,7 @@ export function CustomAlerts() {
             <Button 
               onClick={handleCreateAlert}
               disabled={!playerName || !threshold || createMutation.isPending}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+              className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/90"
             >
               <Plus className="w-4 h-4 mr-2" />
               {createMutation.isPending ? "Creating..." : "Create Alert"}
@@ -166,9 +166,9 @@ export function CustomAlerts() {
         </Card>
         
         {/* Active Alerts */}
-        <Card className="bg-slate-900/50 border-cyan-500/30">
+        <Card className="bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Your Alerts</CardTitle>
+            <CardTitle className="text-secondary">Your Alerts</CardTitle>
             <CardDescription>
               {alerts ? `${alerts.length} active alert${alerts.length !== 1 ? "s" : ""}` : "Loading..."}
             </CardDescription>
@@ -183,7 +183,7 @@ export function CustomAlerts() {
             {alerts && alerts.length > 0 && (
               <div className="space-y-3">
                 {alerts.map((alert) => (
-                  <div key={alert.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                  <div key={alert.id} className="p-4 bg-input/50 rounded-lg border border-slate-700">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-white">{alert.playerName}</h3>

@@ -22,18 +22,18 @@ export function InjuryReport() {
       <div className="container max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-pink-500 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
             NBA Injury Report
           </h1>
-          <p className="text-cyan-400 text-lg">
+          <p className="text-secondary text-lg">
             Real-time injury updates to factor into your betting decisions
           </p>
         </div>
         
         {/* Injuries List */}
-        <Card className="bg-slate-900/50 border-cyan-500/30">
+        <Card className="bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-cyan-400">Current Injuries</CardTitle>
+            <CardTitle className="text-secondary">Current Injuries</CardTitle>
             <CardDescription>
               {injuries ? `${injuries.length} player${injuries.length !== 1 ? "s" : ""} with injury status` : "Loading..."}
             </CardDescription>
@@ -84,7 +84,7 @@ export function InjuryReport() {
                         {injury.expectedReturn && (
                           <div className="flex items-start gap-2">
                             <span className="text-sm text-gray-400 min-w-[80px]">Return:</span>
-                            <span className="text-sm text-cyan-400">{injury.expectedReturn}</span>
+                            <span className="text-sm text-secondary">{injury.expectedReturn}</span>
                           </div>
                         )}
                         <div className="flex items-start gap-2">
@@ -103,9 +103,9 @@ export function InjuryReport() {
         </Card>
         
         {/* Legend */}
-        <Card className="mt-6 bg-slate-900/50 border-cyan-500/30">
+        <Card className="mt-6 bg-card border-secondary/30">
           <CardHeader>
-            <CardTitle className="text-sm text-cyan-400">Status Legend</CardTitle>
+            <CardTitle className="text-sm text-secondary">Status Legend</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

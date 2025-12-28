@@ -42,10 +42,10 @@ export default function StatTrends() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 mb-2">Stat Trends</h1>
-          <p className="text-cyan-400">Performance Visualization and Hot/Cold Streak Analysis</p>
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-2">Stat Trends</h1>
+          <p className="text-secondary">Performance Visualization and Hot/Cold Streak Analysis</p>
         </div>
-        <Card className="bg-slate-800/50 border-purple-500/30 mb-8">
+        <Card className="bg-card border-primary/30 mb-8">
           <CardContent className="pt-6">
             <div className="max-w-xl mx-auto">
               <PlayerSearchDropdown
@@ -53,29 +53,29 @@ export default function StatTrends() {
                 selectedPlayer={player}
                 placeholder="Search for any NBA player..."
                 showPositionFilter={true}
-                accentColor="purple"
+                accentColor="primary"
               />
             </div>
           </CardContent>
         </Card>
         {player && (
           <>
-            <Card className="bg-slate-800/50 border-pink-500/30 mb-6">
+            <Card className="bg-card border-primary/30 mb-6">
               <CardContent className="pt-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold text-pink-400">{player.fullName}</h2>
+                    <h2 className="text-2xl font-bold text-primary">{player.fullName}</h2>
                     <p className="text-gray-400">{player.position} | {player.gamesPlayed} games | {player.minutesPerGame} MPG</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-cyan-400">{ppg}</p>
+                    <p className="text-3xl font-bold text-secondary">{ppg}</p>
                     <p className="text-gray-400 text-sm">Season PPG</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card className="bg-slate-800/50 border-orange-500/30">
+              <Card className="bg-card border-orange-500/30">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Points</span>
@@ -88,7 +88,7 @@ export default function StatTrends() {
                   <p className="text-gray-500 text-sm mt-1">Season: {ppg}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-800/50 border-blue-500/30">
+              <Card className="bg-card border-blue-500/30">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Rebounds</span>
@@ -101,7 +101,7 @@ export default function StatTrends() {
                   <p className="text-gray-500 text-sm mt-1">Season: {rpg}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-800/50 border-green-500/30">
+              <Card className="bg-card border-green-500/30">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400">Assists</span>
@@ -115,19 +115,19 @@ export default function StatTrends() {
                 </CardContent>
               </Card>
             </div>
-            <Card className="bg-slate-800/50 border-cyan-500/30">
+            <Card className="bg-card border-secondary/30">
               <CardHeader>
-                <CardTitle className="text-cyan-400 flex items-center gap-2"><TrendingUp className="w-5 h-5" />Last {games.length} Games</CardTitle>
+                <CardTitle className="text-secondary flex items-center gap-2"><TrendingUp className="w-5 h-5" />Last {games.length} Games</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-pink-400 font-medium mb-2">Points</h4>
+                    <h4 className="text-primary font-medium mb-2">Points</h4>
                     <div className="grid grid-cols-10 gap-1">
                       {games.map((g, i) => (
                         <div key={i} className="text-center">
                           <div className="h-20 flex flex-col justify-end">
-                            <div className="bg-gradient-to-t from-pink-600 to-pink-400 rounded-t" style={{height: `${(g.pts/maxP)*100}%`}} />
+                            <div className="bg-gradient-to-t from-primary to-primary/70 rounded-t" style={{height: `${(g.pts/maxP)*100}%`}} />
                           </div>
                           <p className="text-xs text-white mt-1">{g.pts}</p>
                           <p className="text-xs text-gray-500">G{g.game}</p>
@@ -136,12 +136,12 @@ export default function StatTrends() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-cyan-400 font-medium mb-2">Rebounds</h4>
+                    <h4 className="text-secondary font-medium mb-2">Rebounds</h4>
                     <div className="grid grid-cols-10 gap-1">
                       {games.map((g, i) => (
                         <div key={i} className="text-center">
                           <div className="h-14 flex flex-col justify-end">
-                            <div className="bg-gradient-to-t from-cyan-600 to-cyan-400 rounded-t" style={{height: `${(g.reb/maxR)*100}%`}} />
+                            <div className="bg-gradient-to-t from-secondary to-secondary/70 rounded-t" style={{height: `${(g.reb/maxR)*100}%`}} />
                           </div>
                           <p className="text-xs text-white mt-1">{g.reb}</p>
                         </div>
@@ -164,7 +164,7 @@ export default function StatTrends() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 border-yellow-500/30 mt-6">
+            <Card className="bg-card border-yellow-500/30 mt-6">
               <CardHeader><CardTitle className="text-yellow-400">Betting Insight</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-gray-300">

@@ -13,7 +13,7 @@ export default function PerformanceAnalytics() {
             Back to Home
           </Button>
         </Link>
-        <h1 className="text-4xl font-bold text-primary neon-glow-pink mb-8">PERFORMANCE ANALYTICS</h1>
+        <h1 className="text-4xl font-bold text-primary  mb-8">PERFORMANCE ANALYTICS</h1>
         <Card className="bg-card/50 backdrop-blur">
           <CardHeader>
             <CardTitle>Track Your Performance</CardTitle>

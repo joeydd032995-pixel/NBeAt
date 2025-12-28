@@ -31,7 +31,7 @@ function StatRow({ label, value1, value2, higherIsBetter = true }: { label: stri
       <div className={`text-right font-bold text-lg ${p1Better ? 'text-green-400' : p2Better ? 'text-red-400' : 'text-gray-300'}`}>
         {v1.toFixed(1)}
       </div>
-      <div className="text-center text-cyan-400 font-medium text-sm">{label}</div>
+      <div className="text-center text-secondary font-medium text-sm">{label}</div>
       <div className={`text-left font-bold text-lg ${p2Better ? 'text-green-400' : p1Better ? 'text-red-400' : 'text-gray-300'}`}>
         {v2.toFixed(1)}
       </div>
@@ -47,18 +47,18 @@ export default function PlayerComparison() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 mb-2">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-2">
             Player Comparison
           </h1>
-          <p className="text-cyan-400">Side-by-Side Statistical Analysis</p>
+          <p className="text-secondary">Side-by-Side Statistical Analysis</p>
         </div>
 
         {/* Search Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Player 1 Search */}
-          <Card className="bg-slate-800/50 border-pink-500/30">
+          <Card className="bg-input/50 border-primary/30">
             <CardHeader className="pb-2">
-              <CardTitle className="text-pink-400 flex items-center gap-2">
+              <CardTitle className="text-primary flex items-center gap-2">
                 <Users className="w-5 h-5" /> Player 1
               </CardTitle>
             </CardHeader>
@@ -68,15 +68,15 @@ export default function PlayerComparison() {
                 selectedPlayer={player1}
                 placeholder="Search for Player 1..."
                 showPositionFilter={true}
-                accentColor="pink"
+                accentColor="primary"
               />
             </CardContent>
           </Card>
 
           {/* Player 2 Search */}
-          <Card className="bg-slate-800/50 border-cyan-500/30">
+          <Card className="bg-input/50 border-secondary/30">
             <CardHeader className="pb-2">
-              <CardTitle className="text-cyan-400 flex items-center gap-2">
+              <CardTitle className="text-secondary flex items-center gap-2">
                 <Users className="w-5 h-5" /> Player 2
               </CardTitle>
             </CardHeader>
@@ -86,7 +86,7 @@ export default function PlayerComparison() {
                 selectedPlayer={player2}
                 placeholder="Search for Player 2..."
                 showPositionFilter={true}
-                accentColor="cyan"
+                accentColor="secondary"
               />
             </CardContent>
           </Card>
@@ -94,29 +94,29 @@ export default function PlayerComparison() {
 
         {/* Comparison Table */}
         {player1 && player2 && (
-          <Card className="bg-slate-800/50 border-purple-500/30">
+          <Card className="bg-input/50 border-primary/30">
             <CardHeader>
-              <CardTitle className="text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400">
+              <CardTitle className="text-center text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                 {player1.fullName} vs {player2.fullName}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {/* Player Headers */}
-              <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b-2 border-purple-500/30">
+              <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b-2 border-primary/30">
                 <div className="text-right">
-                  <p className="text-pink-400 font-bold text-xl">{player1.fullName}</p>
+                  <p className="text-primary font-bold text-xl">{player1.fullName}</p>
                   <p className="text-gray-400 text-sm">{player1.position}</p>
                 </div>
-                <div className="text-center text-purple-400 font-bold">VS</div>
+                <div className="text-center text-accent font-bold">VS</div>
                 <div className="text-left">
-                  <p className="text-cyan-400 font-bold text-xl">{player2.fullName}</p>
+                  <p className="text-secondary font-bold text-xl">{player2.fullName}</p>
                   <p className="text-gray-400 text-sm">{player2.position}</p>
                 </div>
               </div>
 
               {/* Core Stats */}
               <div className="mb-6">
-                <h3 className="text-purple-400 font-bold mb-3 text-center">Core Statistics</h3>
+                <h3 className="text-accent font-bold mb-3 text-center">Core Statistics</h3>
                 <StatRow label="PPG" value1={player1.ppg} value2={player2.ppg} />
                 <StatRow label="RPG" value1={player1.rpg} value2={player2.rpg} />
                 <StatRow label="APG" value1={player1.apg} value2={player2.apg} />
@@ -127,7 +127,7 @@ export default function PlayerComparison() {
 
               {/* Shooting Stats */}
               <div className="mb-6">
-                <h3 className="text-purple-400 font-bold mb-3 text-center">Shooting Efficiency</h3>
+                <h3 className="text-accent font-bold mb-3 text-center">Shooting Efficiency</h3>
                 <StatRow label="FG%" value1={player1.fgPct} value2={player2.fgPct} />
                 <StatRow label="3P%" value1={player1.tpPct} value2={player2.tpPct} />
                 <StatRow label="FT%" value1={player1.ftPct} value2={player2.ftPct} />
@@ -137,7 +137,7 @@ export default function PlayerComparison() {
 
               {/* Volume Stats */}
               <div className="mb-6">
-                <h3 className="text-purple-400 font-bold mb-3 text-center">Volume Stats</h3>
+                <h3 className="text-accent font-bold mb-3 text-center">Volume Stats</h3>
                 <StatRow label="FGM" value1={player1.fgm} value2={player2.fgm} />
                 <StatRow label="FGA" value1={player1.fga} value2={player2.fga} />
                 <StatRow label="3PM" value1={player1.tpm} value2={player2.tpm} />
@@ -148,7 +148,7 @@ export default function PlayerComparison() {
 
               {/* Rebounding */}
               <div>
-                <h3 className="text-purple-400 font-bold mb-3 text-center">Rebounding</h3>
+                <h3 className="text-accent font-bold mb-3 text-center">Rebounding</h3>
                 <StatRow label="ORPG" value1={player1.orpg} value2={player2.orpg} />
                 <StatRow label="DRPG" value1={player1.drpg} value2={player2.drpg} />
               </div>
@@ -158,7 +158,7 @@ export default function PlayerComparison() {
 
         {/* Empty State */}
         {(!player1 || !player2) && (
-          <Card className="bg-slate-800/30 border-gray-700/50">
+          <Card className="bg-input/30 border-gray-700/50">
             <CardContent className="py-12 text-center">
               <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">Search for two players to compare their statistics</p>
