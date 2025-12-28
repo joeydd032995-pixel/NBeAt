@@ -294,12 +294,38 @@ export default function GameDashboard() {
   // Filter players by team
   const getTeamPlayers = useCallback((teamName: string) => {
     if (!allPlayers) return [];
+    
+    // Normalize team name for matching
+    const normalizeTeamName = (name: string) => {
+      return name.toLowerCase().replace(/\s+/g, ' ').trim();
+    };
+    
+    const teamNameLower = normalizeTeamName(teamName);
+    // Extract last word (usually the team name like "Lakers", "Celtics")
+    const teamNameParts = teamNameLower.split(' ');
+    const lastWord = teamNameParts[teamNameParts.length - 1];
+    
     // Match team name (handle abbreviations and full names)
     return allPlayers.filter(p => {
-      const team = p.team?.toLowerCase() || "";
-      const searchTerm = teamName.toLowerCase();
-      return team.includes(searchTerm) || searchTerm.includes(team);
-    }).slice(0, 8); // Limit to top 8 players per team
+      const playerTeam = normalizeTeamName(p.team || "");
+      const playerTeamAbbr = (p.teamAbbr || "").toLowerCase();
+      
+      // Exact match
+      if (playerTeam === teamNameLower) return true;
+      
+      // Last word match (e.g., "Lakers" matches "Los Angeles Lakers")
+      if (playerTeam.includes(lastWord) || lastWord.includes(playerTeam)) return true;
+      
+      // Abbreviation match
+      if (playerTeamAbbr && (teamNameLower.includes(playerTeamAbbr) || playerTeamAbbr.includes(lastWord))) return true;
+      
+      // Partial match
+      if (playerTeam.includes(teamNameLower) || teamNameLower.includes(playerTeam)) return true;
+      
+      return false;
+    })
+    .sort((a, b) => parseFloat(b.ppg || "0") - parseFloat(a.ppg || "0")) // Sort by PPG
+    .slice(0, 10); // Limit to top 10 players per team
   }, [allPlayers]);
 
   // Generate player props for a team

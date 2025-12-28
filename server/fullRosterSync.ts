@@ -27,6 +27,100 @@ const TEAM_ABBR_TO_ID: Record<string, number> = {
   "TOR": 28, "UTA": 29, "WAS": 30
 };
 
+// Known player positions (for players with incorrect positions in data)
+const KNOWN_POSITIONS: Record<string, string> = {
+  // Centers
+  "Nikola Jokic": "C", "Joel Embiid": "C", "Anthony Davis": "C", "Bam Adebayo": "C",
+  "Rudy Gobert": "C", "Karl-Anthony Towns": "C", "Domantas Sabonis": "C", "Jarrett Allen": "C",
+  "Evan Mobley": "C", "Chet Holmgren": "C", "Victor Wembanyama": "C", "Brook Lopez": "C",
+  "Alperen Sengun": "C", "Nic Claxton": "C", "Ivica Zubac": "C", "Jonas Valanciunas": "C",
+  "Mitchell Robinson": "C", "Walker Kessler": "C", "Clint Capela": "C", "Myles Turner": "C",
+  "Wendell Carter Jr.": "C", "Mark Williams": "C", "Jalen Duren": "C", "Isaiah Hartenstein": "C",
+  "Daniel Gafford": "C", "Dereck Lively II": "C", "Robert Williams III": "C", "Onyeka Okongwu": "C",
+  "Kristaps Porzingis": "C", "Jusuf Nurkic": "C", "DeAndre Ayton": "C", "Steven Adams": "C",
+  "Al Horford": "C", "Mason Plumlee": "C", "Kevon Looney": "C", "Dwight Powell": "C",
+  "Trayce Jackson-Davis": "C", "Nick Richards": "C", "Jaxson Hayes": "C", "Zach Collins": "C",
+  
+  // Power Forwards
+  "Giannis Antetokounmpo": "PF", "Kevin Durant": "SF", "LeBron James": "SF", "Jayson Tatum": "SF",
+  "Pascal Siakam": "PF", "Julius Randle": "PF", "Zion Williamson": "PF", "Paolo Banchero": "PF",
+  "Scottie Barnes": "PF", "Lauri Markkanen": "PF", "Jabari Smith Jr.": "PF", "Keegan Murray": "PF",
+  "Aaron Gordon": "PF", "John Collins": "PF", "Jerami Grant": "PF", "Kyle Kuzma": "PF",
+  "Bobby Portis": "PF", "P.J. Washington": "PF", "Draymond Green": "PF", "Jonathan Isaac": "PF",
+  "Tobias Harris": "PF", "Harrison Barnes": "PF", "Tari Eason": "PF", "Jalen Williams": "SF",
+  "Brandon Ingram": "SF", "Michael Porter Jr.": "SF", "Keldon Johnson": "SF", "Cam Johnson": "SF",
+  "Dorian Finney-Smith": "SF", "Royce O'Neale": "SF", "Caleb Martin": "SF", "Grant Williams": "PF",
+  
+  // Small Forwards
+  "Jimmy Butler": "SF", "Kawhi Leonard": "SF", "Paul George": "SF", "Khris Middleton": "SF",
+  "OG Anunoby": "SF", "Mikal Bridges": "SF", "Andrew Wiggins": "SF", "Dillon Brooks": "SF",
+  "Herbert Jones": "SF", "Josh Hart": "SF", "Jaden McDaniels": "SF", "Franz Wagner": "SF",
+  "Ausar Thompson": "SF", "Amen Thompson": "SF", "Jaime Jaquez Jr.": "SF", "Cam Thomas": "SG",
+  "Desmond Bane": "SG", "Austin Reaves": "SG", "Bogdan Bogdanovic": "SG", "Buddy Hield": "SG",
+  
+  // Shooting Guards
+  "Devin Booker": "SG", "Donovan Mitchell": "SG", "Jaylen Brown": "SG", "Anthony Edwards": "SG",
+  "Zach LaVine": "SG", "Bradley Beal": "SG", "CJ McCollum": "SG", "Tyler Herro": "SG",
+  "Anfernee Simons": "SG", "Jalen Green": "SG", "Klay Thompson": "SG", "Norman Powell": "SG",
+  "Malik Monk": "SG", "Coby White": "SG", "Caris LeVert": "SG", "Gary Trent Jr.": "SG",
+  "Kentavious Caldwell-Pope": "SG", "Derrick White": "SG", "Marcus Smart": "SG", "Josh Giddey": "SG",
+  "Gradey Dick": "SG", "Brandin Podziemski": "SG", "Keyonte George": "SG", "Jalen Suggs": "SG",
+  "Immanuel Quickley": "SG", "Quentin Grimes": "SG", "Bones Hyland": "SG", "Kevin Huerter": "SG",
+  
+  // Point Guards
+  "Stephen Curry": "PG", "Luka Doncic": "PG", "Ja Morant": "PG", "Trae Young": "PG",
+  "Damian Lillard": "PG", "Tyrese Haliburton": "PG", "Shai Gilgeous-Alexander": "PG", "De'Aaron Fox": "PG",
+  "LaMelo Ball": "PG", "Tyrese Maxey": "PG", "Jalen Brunson": "PG", "Fred VanVleet": "PG",
+  "Darius Garland": "PG", "Dejounte Murray": "PG", "Chris Paul": "PG", "Kyle Lowry": "PG",
+  "Mike Conley": "PG", "Russell Westbrook": "PG", "D'Angelo Russell": "PG", "Spencer Dinwiddie": "PG",
+  "Cade Cunningham": "PG", "Scoot Henderson": "PG", "Ayo Dosunmu": "PG", "Tre Jones": "PG",
+  "Dennis Schroder": "PG", "Reggie Jackson": "PG", "Jordan Poole": "PG", "Delon Wright": "PG",
+  "Lonzo Ball": "PG", "Marcus Sasser": "PG", "Bilal Coulibaly": "SF", "Jarace Walker": "PF",
+  "Derrick Rose": "PG", "Patty Mills": "PG", "Jose Alvarado": "PG", "Payton Pritchard": "PG",
+  "Jrue Holiday": "PG", "Malcolm Brogdon": "PG", "Monte Morris": "PG", "Tyus Jones": "PG",
+  "Tre Mann": "PG", "Collin Sexton": "PG", "Jordan Clarkson": "SG", "Seth Curry": "PG",
+};
+
+/**
+ * Infer position from stats if not in known positions map
+ * Uses rebounds and assists ratio to estimate position
+ */
+function inferPosition(player: RealPlayerStats): string {
+  // Check known positions first
+  if (KNOWN_POSITIONS[player.fullName]) {
+    return KNOWN_POSITIONS[player.fullName];
+  }
+  
+  const rpg = player.rpg || 0;
+  const apg = player.apg || 0;
+  const ppg = player.ppg || 0;
+  const bpg = player.bpg || 0;
+  
+  // High rebounds + blocks = Center
+  if (rpg >= 8 && bpg >= 1.0) return "C";
+  if (rpg >= 7 && bpg >= 0.8) return "C";
+  
+  // High rebounds, moderate assists = Power Forward
+  if (rpg >= 6 && apg < 4) return "PF";
+  
+  // Balanced rebounds and assists = Small Forward
+  if (rpg >= 4 && rpg < 7 && apg >= 2 && apg < 5) return "SF";
+  
+  // High assists = Point Guard
+  if (apg >= 6) return "PG";
+  if (apg >= 4 && rpg < 5) return "PG";
+  
+  // Moderate assists, lower rebounds = Shooting Guard
+  if (apg >= 2 && apg < 5 && rpg < 5) return "SG";
+  
+  // Default based on scoring
+  if (ppg >= 15 && rpg < 5) return "SG";
+  if (ppg >= 10 && rpg >= 5) return "SF";
+  
+  // Fallback
+  return "G";
+}
+
 interface RealPlayerStats {
   fullName: string;
   position: string;
@@ -175,13 +269,16 @@ export async function syncFullRosters(): Promise<{
         matchedWithEspn++;
       }
 
+      // Use inferPosition to get correct position
+      const correctPosition = inferPosition(player);
+      
       playersToInsert.push({
         externalId: espnData ? parseInt(espnData.id) : Math.floor(Math.random() * 900000) + 100000,
         firstName,
         lastName,
         fullName: player.fullName,
         teamId: TEAM_ABBR_TO_ID[player.team] || 0,
-        position: player.position,
+        position: correctPosition,
         ppg: player.ppg.toString(),
         fgm: player.fgm.toString(),
         fga: player.fga.toString(),
