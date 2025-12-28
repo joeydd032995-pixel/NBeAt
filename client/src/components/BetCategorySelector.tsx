@@ -373,7 +373,7 @@ export const BET_CATEGORIES: BetCategory[] = [
     name: "Player Props",
     description: "Individual player performance bets",
     icon: <User className="w-5 h-5" />,
-    color: "from-pink-500 to-rose-500",
+    color: "bg-primary",
     subcategories: PLAYER_PROP_CATEGORIES
   },
   {
@@ -381,7 +381,7 @@ export const BET_CATEGORIES: BetCategory[] = [
     name: "Game Lines",
     description: "Team and game outcome bets",
     icon: <Trophy className="w-5 h-5" />,
-    color: "from-cyan-500 to-blue-500",
+    color: "bg-secondary",
     subcategories: GAME_LINE_CATEGORIES
   }
 ];
@@ -421,7 +421,7 @@ export function BetCategorySelector({
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <div className={`p-2 rounded-lg bg-gradient-to-br ${category.color} text-white`}>
+                <div className={`p-2 rounded-lg ${category.color} text-white`}>
                   {category.icon}
                 </div>
                 {selectedCategory?.id === category.id && (
@@ -462,7 +462,7 @@ export function BetCategorySelector({
                         variant={selectedSubcategory?.id === sub.id ? "default" : "outline"}
                         className={`h-auto py-3 px-3 flex flex-col items-center gap-1 ${
                           selectedSubcategory?.id === sub.id
-                            ? "bg-gradient-to-br " + selectedCategory.color + " text-white"
+                            ? selectedCategory.color + " text-white"
                             : ""
                         }`}
                         onClick={() => onSubcategorySelect(sub)}
@@ -492,9 +492,9 @@ export function BetCategorySelector({
 
       {/* Formula Explanation */}
       {selectedSubcategory && (
-        <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/30">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-cyan-400">
+            <CardTitle className="flex items-center gap-2 text-secondary">
               <Info className="w-5 h-5" />
               How This Analysis Works
             </CardTitle>
@@ -502,15 +502,15 @@ export function BetCategorySelector({
           <CardContent className="space-y-4">
             {/* Formula */}
             <div>
-              <h4 className="text-sm font-medium text-pink-400 mb-2">Formula</h4>
-              <div className="p-3 bg-black/30 rounded-lg font-mono text-sm text-green-400">
+              <h4 className="text-sm font-medium text-primary mb-2">Formula</h4>
+              <div className="p-3 bg-muted rounded-lg font-mono text-sm text-foreground">
                 {selectedSubcategory.formula}
               </div>
             </div>
 
             {/* Scripts Used */}
             <div>
-              <h4 className="text-sm font-medium text-pink-400 mb-2">
+              <h4 className="text-sm font-medium text-primary mb-2">
                 Analytics Scripts Used ({selectedSubcategory.scriptsUsed.length})
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -518,7 +518,7 @@ export function BetCategorySelector({
                   <Badge 
                     key={script} 
                     variant="outline" 
-                    className="text-xs border-cyan-500/50 text-cyan-300"
+                    className="text-xs border-secondary/50 text-secondary"
                   >
                     {script}
                   </Badge>
@@ -528,7 +528,7 @@ export function BetCategorySelector({
 
             {/* Data Required */}
             <div>
-              <h4 className="text-sm font-medium text-pink-400 mb-2">Data Required</h4>
+              <h4 className="text-sm font-medium text-primary mb-2">Data Required</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedSubcategory.dataRequired.map((data) => (
                   <Badge 
@@ -543,8 +543,8 @@ export function BetCategorySelector({
             </div>
 
             {selectedSubcategory.isAltAvailable && (
-              <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-400 text-sm">
+              <div className="p-3 bg-secondary/10 border border-secondary/30 rounded-lg">
+                <div className="flex items-center gap-2 text-secondary text-sm">
                   <Zap className="w-4 h-4" />
                   <span>Alternate lines available for this bet type</span>
                 </div>

@@ -429,33 +429,33 @@ export default function BettingAnalyzer() {
   const formulaExplanation = FORMULA_EXPLANATIONS[formulaKey] || FORMULA_EXPLANATIONS["points"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-background">
       <div className="container py-8 max-w-7xl mx-auto px-4">
         <Link href="/">
-          <Button variant="ghost" className="mb-6 text-cyan-400 hover:text-cyan-300">
+          <Button variant="ghost" className="mb-6 text-primary hover:text-primary/80">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Button>
         </Link>
 
         {/* Header */}
-        <div className="text-center space-y-4 mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400">
-            BETTING ANALYZER
+        <div className="space-y-4 mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            Betting Analyzer
           </h1>
-          <p className="text-lg text-cyan-400">
+          <p className="text-muted-foreground">
             Comprehensive analysis powered by 60+ analytical formulas
           </p>
-          <div className="flex justify-center gap-4 text-sm">
-            <Badge variant="outline" className="border-pink-500/50 text-pink-400">
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Badge variant="outline" className="border-primary/50 text-primary">
               <Target className="w-3 h-3 mr-1" />
               14 Player Props
             </Badge>
-            <Badge variant="outline" className="border-cyan-500/50 text-cyan-400">
+            <Badge variant="outline" className="border-secondary/50 text-secondary">
               <BarChart3 className="w-3 h-3 mr-1" />
               14 Game Lines
             </Badge>
-            <Badge variant="outline" className="border-purple-500/50 text-purple-400">
+            <Badge variant="outline" className="border-muted-foreground/50 text-muted-foreground">
               <Zap className="w-3 h-3 mr-1" />
               Alt Lines Available
             </Badge>
@@ -465,10 +465,10 @@ export default function BettingAnalyzer() {
         {/* Step 1: Select Bet Category */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
               1
             </div>
-            <h2 className="text-xl font-semibold text-white">Select Bet Type</h2>
+            <h2 className="text-lg font-semibold text-foreground">Select Bet Type</h2>
           </div>
           <BetCategorySelector
             onCategorySelect={setSelectedCategory}
@@ -482,10 +482,10 @@ export default function BettingAnalyzer() {
         {selectedSubcategory && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-sm">
                 2
               </div>
-              <h2 className="text-xl font-semibold text-white">Select Game</h2>
+              <h2 className="text-lg font-semibold text-foreground">Select Game</h2>
             </div>
             <GameSelector
               onGameSelect={(game) => setSelectedGame(game)}
@@ -499,16 +499,16 @@ export default function BettingAnalyzer() {
         {selectedCategory?.id === "player_props" && selectedSubcategory && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
                 3
               </div>
-              <h2 className="text-xl font-semibold text-white">Select Player</h2>
+              <h2 className="text-lg font-semibold text-foreground">Select Player</h2>
             </div>
-            <Card className="bg-slate-800/50 border-purple-500/30">
+            <Card className="bg-card border-primary/20">
               <CardContent className="pt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <Label className="text-purple-400 mb-2 block">Player</Label>
+                    <Label className="text-primary mb-2 block">Player</Label>
                     <PlayerSearchDropdown
                       onPlayerSelect={setSelectedPlayer}
                       selectedPlayer={selectedPlayer}
@@ -521,7 +521,7 @@ export default function BettingAnalyzer() {
                   {/* Second player for combined props */}
                   {selectedSubcategory.id === "combined_2" && (
                     <div>
-                      <Label className="text-purple-400 mb-2 block">Second Player</Label>
+                      <Label className="text-primary mb-2 block">Second Player</Label>
                       <PlayerSearchDropdown
                         onPlayerSelect={setSelectedPlayer2}
                         selectedPlayer={selectedPlayer2}
@@ -535,19 +535,19 @@ export default function BettingAnalyzer() {
 
                 {/* Show player's relevant stat */}
                 {selectedPlayer && (
-                  <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-white font-medium">{selectedPlayer.fullName}</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-foreground font-medium">{selectedPlayer.fullName}</p>
+                        <p className="text-sm text-muted-foreground">
                           {selectedPlayer.position} • {selectedPlayer.minutesPerGame} MPG
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-3xl font-bold text-pink-400">
+                        <p className="text-3xl font-bold text-primary">
                           {getPlayerStatForBetType(selectedPlayer, selectedSubcategory.id as PlayerPropType)}
                         </p>
-                        <p className="text-sm text-gray-400">Season Avg</p>
+                        <p className="text-sm text-muted-foreground">Season Avg</p>
                       </div>
                     </div>
                   </div>
@@ -561,17 +561,17 @@ export default function BettingAnalyzer() {
         {selectedSubcategory && (selectedCategory?.id === "game_lines" || selectedPlayer) && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-sm">
                 {selectedCategory?.id === "player_props" ? "4" : "3"}
               </div>
-              <h2 className="text-xl font-semibold text-white">Enter Line & Context</h2>
+              <h2 className="text-lg font-semibold text-foreground">Enter Line & Context</h2>
             </div>
-            <Card className="bg-slate-800/50 border-green-500/30">
+            <Card className="bg-card border-secondary/20">
               <CardContent className="pt-6">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   {/* Line Input */}
                   <div>
-                    <Label className="text-green-400 mb-2 block">
+                    <Label className="text-secondary mb-2 block">
                       {selectedSubcategory.name} Line
                     </Label>
                     <Input
@@ -580,7 +580,7 @@ export default function BettingAnalyzer() {
                       value={line}
                       onChange={(e) => setLine(e.target.value)}
                       placeholder="Enter line..."
-                      className="bg-slate-900 border-green-500/30"
+                      className="bg-input border-border"
                     />
                   </div>
 
@@ -591,7 +591,7 @@ export default function BettingAnalyzer() {
                         checked={isAltLine}
                         onCheckedChange={setIsAltLine}
                       />
-                      <Label className="text-gray-400">Alternate Line</Label>
+                      <Label className="text-muted-foreground">Alternate Line</Label>
                     </div>
                   )}
 
@@ -600,25 +600,25 @@ export default function BettingAnalyzer() {
                     <>
                       <div className="flex items-center gap-2">
                         <Switch checked={isHome} onCheckedChange={setIsHome} />
-                        <Label className="text-gray-400">Home Game</Label>
+                        <Label className="text-muted-foreground">Home Game</Label>
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch checked={isFavorite} onCheckedChange={setIsFavorite} />
-                        <Label className="text-gray-400">Team Favored</Label>
+                        <Label className="text-muted-foreground">Team Favored</Label>
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch checked={isBackToBack} onCheckedChange={setIsBackToBack} />
-                        <Label className="text-gray-400">Back-to-Back</Label>
+                        <Label className="text-muted-foreground">Back-to-Back</Label>
                       </div>
                       <div>
-                        <Label className="text-gray-400 mb-2 block">Days Rest</Label>
+                        <Label className="text-muted-foreground mb-2 block">Days Rest</Label>
                         <Input
                           type="number"
                           min="0"
                           max="7"
                           value={daysRest}
                           onChange={(e) => setDaysRest(e.target.value)}
-                          className="bg-slate-900 border-green-500/30 w-20"
+                          className="bg-input border-border w-20"
                         />
                       </div>
                     </>
@@ -629,7 +629,7 @@ export default function BettingAnalyzer() {
                 <Button
                   onClick={handleAnalyze}
                   disabled={isAnalyzing}
-                  className="w-full mt-6 py-6 bg-gradient-to-r from-pink-500 to-cyan-500 hover:from-pink-600 hover:to-cyan-600"
+                  className="w-full mt-6 py-6 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {isAnalyzing ? (
                     <>
@@ -652,27 +652,27 @@ export default function BettingAnalyzer() {
         {result && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
                 ✓
               </div>
-              <h2 className="text-xl font-semibold text-white">Analysis Results</h2>
+              <h2 className="text-lg font-semibold text-foreground">Analysis Results</h2>
             </div>
             
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Main Result Card */}
-              <Card className="bg-slate-800/50 border-yellow-500/30">
+              <Card className="bg-card border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-yellow-400">{result.betType} Analysis</CardTitle>
+                  <CardTitle className="text-primary">{result.betType} Analysis</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Projection vs Line */}
-                  <div className="text-center p-6 bg-gradient-to-br from-pink-500/20 to-cyan-500/20 rounded-lg">
-                    <div className="text-sm text-gray-400 mb-1">Projection</div>
-                    <div className="text-5xl font-bold text-white mb-2">
+                  <div className="text-center p-6 bg-muted rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">Projection</div>
+                    <div className="text-5xl font-bold text-foreground mb-2">
                       {result.projection}
                     </div>
-                    <div className="text-sm text-gray-400">
-                      vs Line: <span className="text-cyan-400 font-medium">{result.line}</span>
+                    <div className="text-sm text-muted-foreground">
+                      vs Line: <span className="text-secondary font-medium">{result.line}</span>
                     </div>
                   </div>
 
@@ -688,15 +688,15 @@ export default function BettingAnalyzer() {
 
                   {/* Edge */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-900/50 rounded-lg text-center">
-                      <div className="text-sm text-gray-400">Edge</div>
-                      <div className={`text-2xl font-bold ${result.edge > 0 ? "text-green-400" : "text-red-400"}`}>
+                    <div className="p-4 bg-muted rounded-lg text-center">
+                      <div className="text-sm text-muted-foreground">Edge</div>
+                      <div className={`text-2xl font-bold ${result.edge > 0 ? "text-primary" : "text-secondary"}`}>
                         {result.edge > 0 ? "+" : ""}{result.edge}
                       </div>
                     </div>
-                    <div className="p-4 bg-slate-900/50 rounded-lg text-center">
-                      <div className="text-sm text-gray-400">Edge %</div>
-                      <div className={`text-2xl font-bold ${result.edgePercent > 0 ? "text-green-400" : "text-red-400"}`}>
+                    <div className="p-4 bg-muted rounded-lg text-center">
+                      <div className="text-sm text-muted-foreground">Edge %</div>
+                      <div className={`text-2xl font-bold ${result.edgePercent > 0 ? "text-primary" : "text-secondary"}`}>
                         {result.edgePercent > 0 ? "+" : ""}{result.edgePercent}%
                       </div>
                     </div>
@@ -705,16 +705,16 @@ export default function BettingAnalyzer() {
                   {/* Probability */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-green-400">Over {result.probability.over.toFixed(1)}%</span>
-                      <span className="text-red-400">Under {result.probability.under.toFixed(1)}%</span>
+                      <span className="text-primary">Over {result.probability.over.toFixed(1)}%</span>
+                      <span className="text-secondary">Under {result.probability.under.toFixed(1)}%</span>
                     </div>
-                    <div className="h-3 bg-slate-700 rounded-full overflow-hidden flex">
+                    <div className="h-3 bg-muted rounded-full overflow-hidden flex">
                       <div 
-                        className="bg-green-500 transition-all"
+                        className="bg-primary transition-all"
                         style={{ width: `${result.probability.over}%` }}
                       />
                       <div 
-                        className="bg-red-500 transition-all"
+                        className="bg-secondary transition-all"
                         style={{ width: `${result.probability.under}%` }}
                       />
                     </div>
@@ -723,9 +723,9 @@ export default function BettingAnalyzer() {
               </Card>
 
               {/* Breakdown Card */}
-              <Card className="bg-slate-800/50 border-cyan-500/30">
+              <Card className="bg-card border-secondary/20">
                 <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center gap-2">
+                  <CardTitle className="text-secondary flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
                     Analysis Breakdown
                   </CardTitle>
@@ -733,15 +733,15 @@ export default function BettingAnalyzer() {
                 <CardContent className="space-y-4">
                   {/* Projection Steps */}
                   <div>
-                    <h4 className="text-sm font-medium text-pink-400 mb-2">Projection Steps</h4>
+                    <h4 className="text-sm font-medium text-primary mb-2">Projection Steps</h4>
                     <div className="space-y-2">
                       {result.breakdown.map((step, i) => (
-                        <div key={i} className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
+                        <div key={i} className="flex justify-between items-center p-2 bg-muted rounded">
                           <div>
-                            <span className="text-white">{step.label}</span>
-                            <span className="text-xs text-gray-500 ml-2">{step.description}</span>
+                            <span className="text-foreground">{step.label}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{step.description}</span>
                           </div>
-                          <span className="font-mono text-cyan-400">{step.value.toFixed(1)}</span>
+                          <span className="font-mono text-secondary">{step.value.toFixed(1)}</span>
                         </div>
                       ))}
                     </div>
@@ -749,10 +749,10 @@ export default function BettingAnalyzer() {
 
                   {/* Factors Applied */}
                   <div>
-                    <h4 className="text-sm font-medium text-pink-400 mb-2">Factors Applied</h4>
+                    <h4 className="text-sm font-medium text-primary mb-2">Factors Applied</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.factors.map((factor, i) => (
-                        <Badge key={i} variant="outline" className="border-green-500/50 text-green-400">
+                        <Badge key={i} variant="outline" className="border-primary/50 text-primary">
                           {factor}
                         </Badge>
                       ))}
@@ -761,7 +761,7 @@ export default function BettingAnalyzer() {
 
                   {/* Scripts Used */}
                   <div>
-                    <h4 className="text-sm font-medium text-pink-400 mb-2">
+                    <h4 className="text-sm font-medium text-primary mb-2">
                       Scripts Applied ({result.scriptsApplied.length})
                     </h4>
                     <div className="flex flex-wrap gap-1">
@@ -780,14 +780,14 @@ export default function BettingAnalyzer() {
 
         {/* Formula Explanation Section */}
         {selectedSubcategory && (
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader 
               className="cursor-pointer"
               onClick={() => setShowFormulaDetails(!showFormulaDetails)}
             >
-              <CardTitle className="flex items-center justify-between text-white">
+              <CardTitle className="flex items-center justify-between text-foreground">
                 <span className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-400" />
+                  <Lightbulb className="w-5 h-5 text-secondary" />
                   How {selectedSubcategory.name} Analysis Works
                 </span>
                 {showFormulaDetails ? (
@@ -800,18 +800,18 @@ export default function BettingAnalyzer() {
             {showFormulaDetails && (
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="text-pink-400 font-medium mb-2">{formulaExplanation.title}</h4>
+                  <h4 className="text-primary font-medium mb-2">{formulaExplanation.title}</h4>
                   <ol className="space-y-2">
                     {formulaExplanation.steps.map((step, i) => (
-                      <li key={i} className="text-gray-300 text-sm flex gap-2">
-                        <span className="text-cyan-400">{step}</span>
+                      <li key={i} className="text-muted-foreground text-sm flex gap-2">
+                        <span className="text-foreground">{step}</span>
                       </li>
                     ))}
                   </ol>
                 </div>
-                <div className="p-3 bg-slate-900/50 rounded-lg">
-                  <p className="text-sm text-gray-400">
-                    <span className="text-yellow-400 font-medium">Example: </span>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="text-secondary font-medium">Example: </span>
                     {formulaExplanation.example}
                   </p>
                 </div>
