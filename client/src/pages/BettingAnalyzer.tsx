@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -24,7 +25,9 @@ import {
   ChevronDown,
   ChevronUp,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  User,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { GameSelector } from "@/components/GameSelector";
@@ -38,6 +41,7 @@ import {
   PlayerPropType,
   GameLineType
 } from "@/components/BetCategorySelector";
+import { PresetLineSlider, GameLineSlider } from "@/components/LineSlider";
 
 // ============================================================================
 // TYPES
@@ -180,12 +184,15 @@ export default function BettingAnalyzer() {
   const [selectedPlayer2, setSelectedPlayer2] = useState<Player | null>(null); // For combined props
   
   // Analysis Input State
-  const [line, setLine] = useState("");
+  const [line, setLine] = useState<number>(0);
   const [isAltLine, setIsAltLine] = useState(false);
   const [isHome, setIsHome] = useState(true);
   const [isFavorite, setIsFavorite] = useState(true);
-  const [daysRest, setDaysRest] = useState("2");
+  const [daysRest, setDaysRest] = useState(2);
   const [isBackToBack, setIsBackToBack] = useState(false);
+  
+  // Auto-analysis on slider change
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
   
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -195,14 +202,44 @@ export default function BettingAnalyzer() {
   // Auto-populate game data
   useEffect(() => {
     if (selectedGame) {
-      if (selectedGame.total) {
-        // Could auto-set total line for O/U bets
+      if (selectedGame.total && selectedCategory?.id === "game_lines") {
+        // Auto-set total line for O/U bets
+        if (selectedSubcategory?.id === "total" || selectedSubcategory?.id === "alt_total") {
+          setLine(selectedGame.total);
+        }
       }
       if (selectedGame.spread?.home !== null) {
         setIsFavorite(selectedGame.spread.home < 0);
+        // Auto-set spread line
+        if (selectedSubcategory?.id === "spread" || selectedSubcategory?.id === "alt_spread") {
+          setLine(selectedGame.spread.home || 0);
+        }
       }
     }
-  }, [selectedGame]);
+  }, [selectedGame, selectedCategory, selectedSubcategory]);
+
+  // Auto-set line based on player's average when player or bet type changes
+  useEffect(() => {
+    if (selectedPlayer && selectedSubcategory && selectedCategory?.id === "player_props") {
+      const betType = selectedSubcategory.id as PlayerPropType;
+      const avgStat = parseFloat(getPlayerStatForBetType(selectedPlayer, betType));
+      // Set line to player's average (rounded to nearest 0.5)
+      const roundedLine = Math.round(avgStat * 2) / 2;
+      setLine(roundedLine);
+    }
+  }, [selectedPlayer, selectedSubcategory, selectedCategory]);
+
+  // Debounced auto-analysis when line changes
+  useEffect(() => {
+    if (!autoAnalyze || !selectedSubcategory || line === 0) return;
+    if (selectedCategory?.id === "player_props" && !selectedPlayer) return;
+    
+    const timer = setTimeout(() => {
+      handleAnalyze();
+    }, 500); // 500ms debounce
+    
+    return () => clearTimeout(timer);
+  }, [line, autoAnalyze]);
 
   // Get the appropriate stat value based on bet type
   const getPlayerStatForBetType = (player: Player, betType: PlayerPropType): string => {
@@ -345,24 +382,24 @@ export default function BettingAnalyzer() {
   });
 
   // Run analysis
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!selectedSubcategory) {
-      toast.error("Please select a bet type");
+      if (!autoAnalyze) toast.error("Please select a bet type");
       return;
     }
 
     if (selectedCategory?.id === "player_props" && !selectedPlayer) {
-      toast.error("Please select a player");
+      if (!autoAnalyze) toast.error("Please select a player");
       return;
     }
 
-    if (!line) {
-      toast.error("Please enter a line");
+    if (line === 0) {
+      if (!autoAnalyze) toast.error("Please set a line");
       return;
     }
 
     setIsAnalyzing(true);
-    const lineNum = parseFloat(line);
+    const lineNum = line;
 
     // Determine which API to call based on bet type
     if (selectedCategory?.id === "player_props") {
@@ -380,7 +417,7 @@ export default function BettingAnalyzer() {
           line: lineNum,
           is_home: isHome,
           is_favorite: isFavorite,
-          days_rest: parseInt(daysRest),
+          days_rest: daysRest,
           is_back_to_back: isBackToBack
         });
       } else {
@@ -398,7 +435,7 @@ export default function BettingAnalyzer() {
           line: lineNum,
           is_home: isHome,
           is_favorite: isFavorite,
-          days_rest: parseInt(daysRest),
+          days_rest: daysRest,
           is_back_to_back: isBackToBack
         });
       }
@@ -415,7 +452,7 @@ export default function BettingAnalyzer() {
         line: lineNum
       });
     }
-  };
+  }, [selectedCategory, selectedSubcategory, selectedPlayer, line, isHome, isFavorite, daysRest, isBackToBack, selectedGame, autoAnalyze, analyzeCombinedMutation, analyzePropMutation, analyzeGameLineMutation]);
 
   const getRecommendationColor = (rec: string) => {
     if (rec.includes("STRONG_OVER")) return "text-green-500 bg-green-500/10";
@@ -557,92 +594,132 @@ export default function BettingAnalyzer() {
           </div>
         )}
 
-        {/* Step 4: Enter Line & Context */}
+        {/* Step 4: Adjust Line with Slider */}
         {selectedSubcategory && (selectedCategory?.id === "game_lines" || selectedPlayer) && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-sm">
                 {selectedCategory?.id === "player_props" ? "4" : "3"}
               </div>
-              <h2 className="text-lg font-semibold text-foreground">Enter Line & Context</h2>
+              <h2 className="text-lg font-semibold text-foreground">Adjust Line</h2>
+              <div className="ml-auto flex items-center gap-2">
+                <Switch checked={autoAnalyze} onCheckedChange={setAutoAnalyze} />
+                <Label className="text-muted-foreground text-sm">Auto-analyze</Label>
+              </div>
             </div>
             <Card className="bg-card border-secondary/20">
-              <CardContent className="pt-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {/* Line Input */}
-                  <div>
-                    <Label className="text-secondary mb-2 block">
-                      {selectedSubcategory.name} Line
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={line}
-                      onChange={(e) => setLine(e.target.value)}
-                      placeholder="Enter line..."
-                      className="bg-input border-border"
-                    />
-                  </div>
+              <CardContent className="pt-6 space-y-6">
+                {/* Line Slider */}
+                {selectedCategory?.id === "player_props" && selectedPlayer && (
+                  <PresetLineSlider
+                    betType={selectedSubcategory.id}
+                    playerStats={{
+                      ppg: parseFloat(selectedPlayer.ppg || "0"),
+                      rpg: parseFloat(selectedPlayer.rpg || "0"),
+                      apg: parseFloat(selectedPlayer.apg || "0"),
+                      spg: parseFloat(selectedPlayer.spg || "0"),
+                      bpg: parseFloat(selectedPlayer.bpg || "0"),
+                      tpm: parseFloat(selectedPlayer.tpm || "0")
+                    }}
+                    value={line}
+                    onChange={setLine}
+                  />
+                )}
 
-                  {/* Alt Line Toggle */}
-                  {selectedSubcategory.isAltAvailable && (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={isAltLine}
-                        onCheckedChange={setIsAltLine}
-                      />
-                      <Label className="text-muted-foreground">Alternate Line</Label>
+                {selectedCategory?.id === "game_lines" && (
+                  <GameLineSlider
+                    lineType={selectedSubcategory.id.includes("spread") ? "spread" : 
+                             selectedSubcategory.id.includes("total") ? "total" : "moneyline"}
+                    value={line}
+                    onChange={setLine}
+                    homeTeam={selectedGame?.homeTeam}
+                    awayTeam={selectedGame?.awayTeam}
+                  />
+                )}
+
+                {/* Quick Stats Display */}
+                {selectedCategory?.id === "player_props" && selectedPlayer && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">PPG</div>
+                      <div className="text-lg font-bold text-primary">{selectedPlayer.ppg || "0"}</div>
                     </div>
-                  )}
+                    <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">RPG</div>
+                      <div className="text-lg font-bold text-secondary">{selectedPlayer.rpg || "0"}</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">APG</div>
+                      <div className="text-lg font-bold text-primary">{selectedPlayer.apg || "0"}</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">MPG</div>
+                      <div className="text-lg font-bold text-secondary">{selectedPlayer.minutesPerGame || "0"}</div>
+                    </div>
+                  </div>
+                )}
 
-                  {/* Context Toggles */}
-                  {selectedCategory?.id === "player_props" && (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={isHome} onCheckedChange={setIsHome} />
-                        <Label className="text-muted-foreground">Home Game</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={isFavorite} onCheckedChange={setIsFavorite} />
-                        <Label className="text-muted-foreground">Team Favored</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={isBackToBack} onCheckedChange={setIsBackToBack} />
-                        <Label className="text-muted-foreground">Back-to-Back</Label>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground mb-2 block">Days Rest</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="7"
-                          value={daysRest}
-                          onChange={(e) => setDaysRest(e.target.value)}
-                          className="bg-input border-border w-20"
-                        />
-                      </div>
-                    </>
-                  )}
+                <Separator className="bg-slate-700" />
+
+                {/* Context Toggles */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-300">Game Context</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
+                      <Switch checked={isHome} onCheckedChange={setIsHome} />
+                      <Label className="text-sm text-gray-300">Home</Label>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
+                      <Switch checked={isFavorite} onCheckedChange={setIsFavorite} />
+                      <Label className="text-sm text-gray-300">Favored</Label>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-800/30 rounded-lg p-3">
+                      <Switch checked={isBackToBack} onCheckedChange={setIsBackToBack} />
+                      <Label className="text-sm text-gray-300">B2B</Label>
+                    </div>
+                    <div className="bg-slate-800/30 rounded-lg p-3">
+                      <Label className="text-xs text-gray-400 mb-1 block">Rest Days</Label>
+                      <Slider
+                        value={[daysRest]}
+                        onValueChange={(v) => setDaysRest(v[0])}
+                        min={0}
+                        max={7}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="text-center text-sm text-gray-300 mt-1">{daysRest} days</div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Analyze Button */}
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing}
-                  className="w-full mt-6 py-6 bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Calculator className="w-5 h-5 mr-2" />
-                      Run Analysis
-                    </>
-                  )}
-                </Button>
+                {/* Analyze Button (only shown if auto-analyze is off) */}
+                {!autoAnalyze && (
+                  <Button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    className="w-full py-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Calculator className="w-5 h-5 mr-2" />
+                        Run Analysis
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Loading indicator for auto-analyze */}
+                {autoAnalyze && isAnalyzing && (
+                  <div className="flex items-center justify-center gap-2 text-primary">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Updating analysis...</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
