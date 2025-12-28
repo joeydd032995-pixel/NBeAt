@@ -37,11 +37,18 @@ export default function Home() {
 
   const features = [
     {
+      title: "Game Dashboard",
+      description: "All player props & game lines for a selected game with adjustable sliders",
+      icon: Target,
+      href: "/game-dashboard",
+      accent: "coral"
+    },
+    {
       title: "Player Stats",
       description: "Live 2025-26 NBA player statistics (PPG, RPG, APG, FG%)",
       icon: TrendingUp,
       href: "/player-stats",
-      accent: "coral"
+      accent: "yellow"
     },
     {
       title: "Props Analytics",

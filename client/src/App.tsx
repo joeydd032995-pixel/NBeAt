@@ -22,12 +22,14 @@ import { CustomAlerts } from "./pages/CustomAlerts";
 import AIAssistant from "./pages/AIAssistant";
 import PropsAnalytics from "./pages/PropsAnalytics";
 import BettingAnalyzer from "./pages/BettingAnalyzer";
+import GameDashboard from "./pages/GameDashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/betting-analyzer"} component={BettingAnalyzer} />
+      <Route path={"/game-dashboard"} component={GameDashboard} />
       <Route path={"/player-stats"} component={PlayerStats} />
       <Route path={"/player-comparison"} component={PlayerComparison} />
       <Route path={"/stat-trends"} component={StatTrends} />
