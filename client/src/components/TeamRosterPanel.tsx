@@ -22,18 +22,20 @@ import { cn } from "@/lib/utils";
 
 interface Player {
   id: number;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   fullName: string;
-  team: string;
-  position: string;
-  ppg: string;
-  rpg: string;
-  apg: string;
-  spg: string;
-  bpg: string;
-  tpm: string;
-  minutesPerGame: string;
+  team: string | null;
+  teamAbbr: string | null;
+  teamId: number | null;
+  position: string | null;
+  ppg: string | null;
+  rpg: string | null;
+  apg: string | null;
+  spg: string | null;
+  bpg: string | null;
+  tpm: string | null;
+  minutesPerGame: string | null;
 }
 
 interface PlayerPropLine {
@@ -246,17 +248,41 @@ export function TeamRosterPanel({
   const teamPlayers = useMemo(() => {
     if (!allPlayers) return [];
     
+    // Normalize team name for matching
+    const normalizeTeamName = (name: string) => {
+      return name.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+    
+    // Extract city and team name parts
+    // e.g., "Los Angeles Lakers" -> ["los angeles", "lakers"]
+    const teamNameLower = normalizeTeamName(teamName);
+    const teamNameParts = teamNameLower.split(' ');
+    const lastWord = teamNameParts[teamNameParts.length - 1]; // Usually the team name (e.g., "lakers")
+    
     const searchTerms = [
-      teamName.toLowerCase(),
+      teamNameLower,
+      lastWord,
       teamAbbr?.toLowerCase() || ""
     ].filter(Boolean);
 
     return allPlayers
       .filter(p => {
-        const playerTeam = (p.team || "").toLowerCase();
-        return searchTerms.some(term => 
-          playerTeam.includes(term) || term.includes(playerTeam)
-        );
+        const playerTeam = normalizeTeamName(p.team || "");
+        const playerTeamAbbr = (p.teamAbbr || "").toLowerCase();
+        
+        // Check if any search term matches
+        return searchTerms.some(term => {
+          if (!term) return false;
+          // Exact match
+          if (playerTeam === term || playerTeamAbbr === term) return true;
+          // Partial match (team name contains search term or vice versa)
+          if (playerTeam.includes(term) || term.includes(playerTeam)) return true;
+          // Abbreviation match
+          if (playerTeamAbbr.includes(term) || term.includes(playerTeamAbbr)) return true;
+          return false;
+        });
       })
       .sort((a, b) => {
         // Sort by PPG descending

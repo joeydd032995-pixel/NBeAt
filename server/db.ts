@@ -112,7 +112,49 @@ export async function upsertTeam(team: InsertTeam) {
 export async function getAllPlayers() {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(players);
+  
+  // Join with teams to get team name and abbreviation
+  const result = await db
+    .select({
+      id: players.id,
+      externalId: players.externalId,
+      firstName: players.firstName,
+      lastName: players.lastName,
+      fullName: players.fullName,
+      teamId: players.teamId,
+      position: players.position,
+      ppg: players.ppg,
+      fgm: players.fgm,
+      fga: players.fga,
+      fgPct: players.fgPct,
+      ftm: players.ftm,
+      fta: players.fta,
+      ftPct: players.ftPct,
+      tpm: players.tpm,
+      tpa: players.tpa,
+      tpPct: players.tpPct,
+      rpg: players.rpg,
+      orpg: players.orpg,
+      drpg: players.drpg,
+      apg: players.apg,
+      topg: players.topg,
+      spg: players.spg,
+      bpg: players.bpg,
+      pfpg: players.pfpg,
+      ts: players.ts,
+      efg: players.efg,
+      gamesPlayed: players.gamesPlayed,
+      minutesPerGame: players.minutesPerGame,
+      createdAt: players.createdAt,
+      updatedAt: players.updatedAt,
+      // Team info from join
+      team: teams.name,
+      teamAbbr: teams.abbr,
+    })
+    .from(players)
+    .leftJoin(teams, eq(players.teamId, teams.id));
+  
+  return result;
 }
 
 export async function getPlayerByName(fullName: string) {
