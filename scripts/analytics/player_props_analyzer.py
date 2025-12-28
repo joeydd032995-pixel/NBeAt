@@ -718,11 +718,12 @@ class PlayerPropsAnalyzer:
             Dict with combined prop analysis
         """
         try:
-            ppg = float(player_data.get('ppg', 0))
-            rpg = float(player_data.get('rpg', 0))
-            apg = float(player_data.get('apg', 0))
-            spg = float(player_data.get('spg', 0))
-            bpg = float(player_data.get('bpg', 0))
+            # Support both 'ppg' and 'season_ppg' naming conventions
+            ppg = float(player_data.get('ppg', player_data.get('season_ppg', 0)))
+            rpg = float(player_data.get('rpg', player_data.get('season_rpg', 0)))
+            apg = float(player_data.get('apg', player_data.get('season_apg', 0)))
+            spg = float(player_data.get('spg', player_data.get('season_spg', 0)))
+            bpg = float(player_data.get('bpg', player_data.get('season_bpg', 0)))
             
             # Calculate base projection based on prop type
             prop_type_lower = prop_type.lower()
