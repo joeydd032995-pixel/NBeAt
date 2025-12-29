@@ -55,25 +55,32 @@ export default function Home() {
 
   const features = [
     {
+      title: "Game Props",
+      description: "Browse all player props by game with Over/Under lines and odds",
+      icon: Trophy,
+      href: "/game-props",
+      accent: "coral"
+    },
+    {
       title: "Game Dashboard",
       description: "All player props & game lines for a selected game with adjustable sliders",
       icon: Target,
       href: "/game-dashboard",
-      accent: "coral"
+      accent: "yellow"
     },
     {
       title: "Player Stats",
       description: "Live 2025-26 NBA player statistics (PPG, RPG, APG, FG%)",
       icon: TrendingUp,
       href: "/player-stats",
-      accent: "yellow"
+      accent: "coral"
     },
     {
       title: "Props Analytics",
       description: "Quick prop analysis with game selection and auto-populated stats",
       icon: Zap,
       href: "/props-analytics",
-      accent: "coral"
+      accent: "yellow"
     },
     {
       title: "Team Analytics",

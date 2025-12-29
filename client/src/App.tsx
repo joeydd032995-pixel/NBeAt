@@ -23,6 +23,7 @@ import AIAssistant from "./pages/AIAssistant";
 import PropsAnalytics from "./pages/PropsAnalytics";
 import BettingAnalyzer from "./pages/BettingAnalyzer";
 import GameDashboard from "./pages/GameDashboard";
+import GameProps from "./pages/GameProps";
 
 function Router() {
   return (
@@ -30,6 +31,8 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/betting-analyzer"} component={BettingAnalyzer} />
       <Route path={"/game-dashboard"} component={GameDashboard} />
+      <Route path={"/game-props"} component={GameProps} />
+      <Route path={"/game-props/:gameId"} component={GameProps} />
       <Route path={"/player-stats"} component={PlayerStats} />
       <Route path={"/player-comparison"} component={PlayerComparison} />
       <Route path={"/stat-trends"} component={StatTrends} />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -404,6 +405,19 @@ export function BetCategorySelector({
   selectedSubcategory
 }: BetCategorySelectorProps) {
   const [showFormula, setShowFormula] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const handleBadgeClick = (e: React.MouseEvent, category: BetCategory, sub: BetSubcategory) => {
+    e.stopPropagation();
+    // For player props, navigate to game props page
+    if (category.id === "player_props") {
+      setLocation(`/game-props?prop=${sub.id}`);
+    } else {
+      // For game lines, select the category and subcategory
+      onCategorySelect(category);
+      onSubcategorySelect(sub);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -414,19 +428,21 @@ export function BetCategorySelector({
           const borderColor = isPlayerProps ? "border-primary/20" : "border-secondary/20";
           const selectedBorderColor = isPlayerProps ? "ring-primary border-primary" : "ring-secondary border-secondary";
           const badgeBorderColor = isPlayerProps ? "border-primary/30 text-primary" : "border-secondary/30 text-secondary";
-          const badgeHoverBg = isPlayerProps ? "hover:bg-primary/10" : "hover:bg-secondary/10";
+          const badgeHoverBg = isPlayerProps ? "hover:bg-primary/20" : "hover:bg-secondary/20";
           
           return (
             <Card
               key={category.id}
-              className={`cursor-pointer transition-all duration-200 ${borderColor} ${
+              className={`transition-all duration-200 ${borderColor} ${
                 selectedCategory?.id === category.id
                   ? `ring-2 ${selectedBorderColor}`
                   : "hover:border-primary/50"
               }`}
-              onClick={() => onCategorySelect(category)}
             >
-              <CardHeader className="pb-3">
+              <CardHeader 
+                className="pb-3 cursor-pointer"
+                onClick={() => onCategorySelect(category)}
+              >
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${category.color} text-white`}>
                     {category.icon}
@@ -443,7 +459,8 @@ export function BetCategorySelector({
                     <Badge 
                       key={sub.id} 
                       variant="outline" 
-                      className={`justify-center ${badgeBorderColor} ${badgeHoverBg} transition-colors`}
+                      className={`justify-center cursor-pointer ${badgeBorderColor} ${badgeHoverBg} transition-colors`}
+                      onClick={(e) => handleBadgeClick(e, category, sub)}
                     >
                       {sub.shortName}
                     </Badge>
