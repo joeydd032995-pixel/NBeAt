@@ -1,4 +1,5 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,24 @@ import {
   ArrowDownRight
 } from "lucide-react";
 
+type TabType = "overview" | "analytics" | "props" | "games";
+
 export default function Home() {
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  
+  // Tab navigation handlers
+  const handleTabClick = (tab: TabType) => {
+    if (tab === "overview") {
+      setActiveTab("overview");
+    } else if (tab === "analytics") {
+      setLocation("/betting-analyzer");
+    } else if (tab === "props") {
+      setLocation("/props-analytics");
+    } else if (tab === "games") {
+      setLocation("/game-dashboard");
+    }
+  };
   const primaryTool = {
     title: "Betting Analyzer",
     description: "Comprehensive analysis for ALL bet types with formula explanations",
@@ -138,10 +156,30 @@ export default function Home() {
             Main Dashboard
           </h1>
           <div className="flex items-center gap-8 text-sm">
-            <span className="text-primary font-medium accent-underline">Overview</span>
-            <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Analytics</span>
-            <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Props</span>
-            <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Games</span>
+            <button 
+              onClick={() => handleTabClick("overview")}
+              className={`font-medium transition-colors ${activeTab === "overview" ? "text-primary accent-underline" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Overview
+            </button>
+            <button 
+              onClick={() => handleTabClick("analytics")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Analytics
+            </button>
+            <button 
+              onClick={() => handleTabClick("props")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Props
+            </button>
+            <button 
+              onClick={() => handleTabClick("games")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Games
+            </button>
           </div>
         </div>
       </div>
