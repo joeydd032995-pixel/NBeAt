@@ -830,11 +830,12 @@ export default function GamePropsNew() {
               const timeStr = game.displayTime || (game.gameTime ? new Date(game.gameTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'TBD');
               const dateStr = game.displayDate || (game.gameTime ? new Date(game.gameTime).toLocaleDateString('en-US', { weekday: 'short' }) : 'TBD');
               
-              // Use real odds from API, fallback to generated if not available
-              const homeML = game.moneyline?.home || (-165 + Math.floor(Math.random() * 200 - 100));
-              const awayML = game.moneyline?.away || (homeML > 0 ? -(homeML + 30) : Math.abs(homeML) - 30);
-              const spread = game.spread?.home?.toFixed(1) || (Math.random() * 10 - 5).toFixed(1);
-              const total = game.total?.toFixed(1) || (220 + Math.random() * 20).toFixed(1);
+              // Use real odds from API only - no fallback to generated values
+              const homeML = game.moneyline?.home;
+              const awayML = game.moneyline?.away;
+              const spreadHome = game.spread?.home;
+              const spreadAway = game.spread?.away;
+              const total = game.total;
               
               return (
                 <Card 
@@ -865,17 +866,33 @@ export default function GamePropsNew() {
                         </span>
                       </div>
                       <div className="text-center">
-                        <span className={`text-sm font-semibold ${awayML > 0 ? 'text-green-400' : 'text-primary'}`}>
-                          {formatOdds(awayML)}
-                        </span>
+                        {awayML !== undefined && awayML !== null ? (
+                          <span className={`text-sm font-semibold ${awayML > 0 ? 'text-green-400' : 'text-primary'}`}>
+                            {formatOdds(awayML)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-white">+{Math.abs(parseFloat(spread))}</div>
-                        <div className="text-xs text-slate-400">-110</div>
+                        {spreadAway !== undefined && spreadAway !== null ? (
+                          <>
+                            <div className="text-sm font-medium text-white">{spreadAway > 0 ? '+' : ''}{spreadAway}</div>
+                            <div className="text-xs text-slate-400">-110</div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-white">U {total}</div>
-                        <div className="text-xs text-slate-400">-105</div>
+                        {total !== undefined && total !== null ? (
+                          <>
+                            <div className="text-sm font-medium text-white">U {total}</div>
+                            <div className="text-xs text-slate-400">-105</div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                     </div>
                     
@@ -888,17 +905,33 @@ export default function GamePropsNew() {
                         </span>
                       </div>
                       <div className="text-center">
-                        <span className={`text-sm font-semibold ${homeML > 0 ? 'text-green-400' : 'text-primary'}`}>
-                          {formatOdds(homeML)}
-                        </span>
+                        {homeML !== undefined && homeML !== null ? (
+                          <span className={`text-sm font-semibold ${homeML > 0 ? 'text-green-400' : 'text-primary'}`}>
+                            {formatOdds(homeML)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-white">{spread}</div>
-                        <div className="text-xs text-slate-400">-110</div>
+                        {spreadHome !== undefined && spreadHome !== null ? (
+                          <>
+                            <div className="text-sm font-medium text-white">{spreadHome > 0 ? '+' : ''}{spreadHome}</div>
+                            <div className="text-xs text-slate-400">-110</div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-white">O {total}</div>
-                        <div className="text-xs text-slate-400">-115</div>
+                        {total !== undefined && total !== null ? (
+                          <>
+                            <div className="text-sm font-medium text-white">O {total}</div>
+                            <div className="text-xs text-slate-400">-115</div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-500">N/A</span>
+                        )}
                       </div>
                     </div>
                     
@@ -909,7 +942,6 @@ export default function GamePropsNew() {
                         <span>NBA</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-slate-400">
-                        <span>{Math.floor(Math.random() * 50 + 80)}</span>
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
@@ -1274,15 +1306,27 @@ export default function GamePropsNew() {
                                   </button>
                                 </div>
                                 
-                                {/* Over/Under Buttons - Use real odds from API */}
-                                <OddsButton 
-                                  label={`Over ${player.line}`}
-                                  odds={propOdds?.overOdds || generateOdds(true, Math.random() - 0.5)}
-                                />
-                                <OddsButton 
-                                  label={`Under ${player.line}`}
-                                  odds={propOdds?.underOdds || generateOdds(false, Math.random() - 0.5)}
-                                />
+                                {/* Over/Under Buttons - Use real odds from API only */}
+                                {propOdds?.overOdds ? (
+                                  <OddsButton 
+                                    label={`Over ${player.line}`}
+                                    odds={propOdds.overOdds}
+                                  />
+                                ) : (
+                                  <div className="flex-1 p-3 rounded-lg bg-slate-800/40 border border-slate-700/30 text-center">
+                                    <p className="text-sm text-slate-500">N/A</p>
+                                  </div>
+                                )}
+                                {propOdds?.underOdds ? (
+                                  <OddsButton 
+                                    label={`Under ${player.line}`}
+                                    odds={propOdds.underOdds}
+                                  />
+                                ) : (
+                                  <div className="flex-1 p-3 rounded-lg bg-slate-800/40 border border-slate-700/30 text-center">
+                                    <p className="text-sm text-slate-500">N/A</p>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
