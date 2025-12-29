@@ -189,6 +189,12 @@ const formatOdds = (odds: number): string => {
 };
 
 const getPlayerPropLine = (player: any, propType: string): number | null => {
+  // First check if player has propsData from Odds API
+  if (player.propsData && player.propsData[propType]) {
+    return player.propsData[propType].line;
+  }
+  
+  // Fallback to calculated lines from stats
   const ppg = parseFloat(player.ppg || "0");
   const rpg = parseFloat(player.rpg || "0");
   const apg = parseFloat(player.apg || "0");
@@ -210,6 +216,17 @@ const getPlayerPropLine = (player: any, propType: string): number | null => {
     case "ra": return (rpg + apg) > 0 ? Math.round((rpg + apg) * 2) / 2 : null;
     default: return null;
   }
+};
+
+// Get player prop odds from Odds API data
+const getPlayerPropOdds = (player: any, propType: string): { overOdds: number; underOdds: number } | null => {
+  if (player.propsData && player.propsData[propType]) {
+    return {
+      overOdds: player.propsData[propType].overOdds,
+      underOdds: player.propsData[propType].underOdds
+    };
+  }
+  return null;
 };
 
 // ============================================================================
@@ -518,7 +535,13 @@ export default function GamePropsNew() {
 
   // Fetch data
   const { data: games, isLoading: gamesLoading } = trpc.odds.getUpcomingGames.useQuery();
-  const { data: allPlayers } = trpc.nba.getAllPlayers.useQuery();
+  const { data: allPlayersFromDb } = trpc.nba.getAllPlayers.useQuery();
+  
+  // Fetch player props from Odds API when a game is selected
+  const { data: playerPropsData, isLoading: propsLoading } = trpc.odds.getAllPlayerProps.useQuery(
+    { eventId: selectedGame?.id || "" },
+    { enabled: !!selectedGame?.id }
+  );
 
   // Auto-expand prop from query param
   useEffect(() => {
@@ -528,9 +551,97 @@ export default function GamePropsNew() {
     }
   }, [queryParams.prop, selectedGame]);
 
-  // Get players for selected game
+  // Parse player props from Odds API into a usable format
+  const parsedPlayerProps = useMemo(() => {
+    if (!playerPropsData?.bookmakers?.length) return {};
+    
+    const propsMap: Record<string, { 
+      name: string; 
+      team: string;
+      props: Record<string, { line: number; overOdds: number; underOdds: number }> 
+    }> = {};
+    
+    // Get first bookmaker's data
+    const bookmaker = playerPropsData.bookmakers[0];
+    
+    for (const market of bookmaker.markets || []) {
+      // Map market keys to our prop type IDs
+      const propTypeMap: Record<string, string> = {
+        "player_points": "points",
+        "player_rebounds": "rebounds",
+        "player_assists": "assists",
+        "player_threes": "threes",
+        "player_points_rebounds_assists": "pra",
+        "player_steals": "steals",
+        "player_blocks": "blocks",
+      };
+      
+      const propType = propTypeMap[market.key] || market.key;
+      
+      for (const outcome of market.outcomes || []) {
+        const playerName = outcome.description || outcome.name;
+        if (!playerName) continue;
+        
+        if (!propsMap[playerName]) {
+          // Determine team based on player name matching
+          const isHomeTeam = playerPropsData.home_team && 
+            (outcome.description?.includes(playerPropsData.home_team) || false);
+          propsMap[playerName] = {
+            name: playerName,
+            team: isHomeTeam ? playerPropsData.home_team : playerPropsData.away_team,
+            props: {}
+          };
+        }
+        
+        const isOver = outcome.name === "Over";
+        const line = outcome.point || 0;
+        
+        if (!propsMap[playerName].props[propType]) {
+          propsMap[playerName].props[propType] = { line, overOdds: 0, underOdds: 0 };
+        }
+        
+        if (isOver) {
+          propsMap[playerName].props[propType].overOdds = outcome.price;
+          propsMap[playerName].props[propType].line = line;
+        } else {
+          propsMap[playerName].props[propType].underOdds = outcome.price;
+        }
+      }
+    }
+    
+    return propsMap;
+  }, [playerPropsData]);
+
+  // Get players for selected game - combine DB players with Odds API props
   const gamePlayers = useMemo(() => {
-    if (!selectedGame || !allPlayers) return { home: [], away: [] };
+    if (!selectedGame) return { home: [], away: [] };
+    
+    // If we have props from Odds API, use those players
+    if (Object.keys(parsedPlayerProps).length > 0) {
+      const players = Object.entries(parsedPlayerProps).map(([name, data]) => ({
+        id: name,
+        fullName: name,
+        team: data.team,
+        position: "",
+        ppg: data.props.points?.line?.toString() || "0",
+        rpg: data.props.rebounds?.line?.toString() || "0",
+        apg: data.props.assists?.line?.toString() || "0",
+        spg: "0",
+        bpg: "0",
+        tpm: data.props.threes?.line?.toString() || "0",
+        propsData: data.props
+      }));
+      
+      return {
+        home: players.filter(p => p.team === selectedGame.homeTeam)
+          .sort((a, b) => parseFloat(b.ppg) - parseFloat(a.ppg)),
+        away: players.filter(p => p.team === selectedGame.awayTeam)
+          .sort((a, b) => parseFloat(b.ppg) - parseFloat(a.ppg)),
+      };
+    }
+    
+    // Fallback to DB players if no Odds API data
+    if (!allPlayersFromDb) return { home: [], away: [] };
     
     const matchTeam = (playerTeam: string, teamName: string) => {
       if (!playerTeam || !teamName) return false;
@@ -542,12 +653,12 @@ export default function GamePropsNew() {
     };
 
     return {
-      home: allPlayers.filter(p => matchTeam(p.team || "", selectedGame.homeTeam))
+      home: allPlayersFromDb.filter(p => matchTeam(p.team || "", selectedGame.homeTeam))
         .sort((a, b) => parseFloat(b.ppg || "0") - parseFloat(a.ppg || "0")),
-      away: allPlayers.filter(p => matchTeam(p.team || "", selectedGame.awayTeam))
+      away: allPlayersFromDb.filter(p => matchTeam(p.team || "", selectedGame.awayTeam))
         .sort((a, b) => parseFloat(b.ppg || "0") - parseFloat(a.ppg || "0")),
     };
-  }, [selectedGame, allPlayers]);
+  }, [selectedGame, allPlayersFromDb, parsedPlayerProps]);
 
   // Filter prop types
   const filteredPropTypes = useMemo(() => {
@@ -1136,38 +1247,45 @@ export default function GamePropsNew() {
                   
                   {isExpanded && (
                     <div className="border-t border-slate-700/50">
-                      {playersWithProp.length === 0 ? (
+                      {propsLoading ? (
+                        <div className="p-4 text-center text-slate-400 text-sm">
+                          Loading player props...
+                        </div>
+                      ) : playersWithProp.length === 0 ? (
                         <div className="p-4 text-center text-slate-400 text-sm">
                           No players with {propType.name.toLowerCase()} data
                         </div>
                       ) : (
                         <div className="divide-y divide-slate-700/30">
-                          {playersWithProp.slice(0, 10).map((player) => (
-                            <div key={player.id} className="p-3 flex items-center gap-3">
-                              {/* Player Name with Expand Button */}
-                              <div className="flex-1 min-w-0 flex items-center gap-2">
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-primary truncate">{player.fullName}</p>
+                          {playersWithProp.slice(0, 10).map((player) => {
+                            const propOdds = getPlayerPropOdds(player, propType.id);
+                            return (
+                              <div key={player.id} className="p-3 flex items-center gap-3">
+                                {/* Player Name with Expand Button */}
+                                <div className="flex-1 min-w-0 flex items-center gap-2">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-primary truncate">{player.fullName}</p>
+                                  </div>
+                                  <button 
+                                    onClick={() => setExpandedPlayer({ player, propType: { id: propType.id, name: propType.name } })}
+                                    className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 transition-colors"
+                                  >
+                                    <ChevronsUpDown className="w-4 h-4 text-green-400" />
+                                  </button>
                                 </div>
-                                <button 
-                                  onClick={() => setExpandedPlayer({ player, propType: { id: propType.id, name: propType.name } })}
-                                  className="p-1 rounded bg-green-600/20 hover:bg-green-600/40 transition-colors"
-                                >
-                                  <ChevronsUpDown className="w-4 h-4 text-green-400" />
-                                </button>
+                                
+                                {/* Over/Under Buttons - Use real odds from API */}
+                                <OddsButton 
+                                  label={`Over ${player.line}`}
+                                  odds={propOdds?.overOdds || generateOdds(true, Math.random() - 0.5)}
+                                />
+                                <OddsButton 
+                                  label={`Under ${player.line}`}
+                                  odds={propOdds?.underOdds || generateOdds(false, Math.random() - 0.5)}
+                                />
                               </div>
-                              
-                              {/* Over/Under Buttons */}
-                              <OddsButton 
-                                label={`Over ${player.line}`}
-                                odds={generateOdds(true, Math.random() - 0.5)}
-                              />
-                              <OddsButton 
-                                label={`Under ${player.line}`}
-                                odds={generateOdds(false, Math.random() - 0.5)}
-                              />
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
