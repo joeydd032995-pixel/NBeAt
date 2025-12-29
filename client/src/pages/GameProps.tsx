@@ -76,15 +76,16 @@ const TEAM_ABBR: Record<string, string> = {
 
 
 // ============================================================================
-// FORMULA TOOLS CONFIGURATION
+// ANALYSIS TOOLS CONFIGURATION
 // ============================================================================
 
-interface FormulaConfig {
+interface AnalysisTool {
   id: string;
   name: string;
   description: string;
+  category: "projection" | "context" | "variance" | "game";
   enabled: boolean;
-  type: "slider" | "dropdown" | "both";
+  type: "slider" | "dropdown" | "both" | "toggle";
   sliderConfig?: {
     min: number;
     max: number;
@@ -98,11 +99,33 @@ interface FormulaConfig {
   };
 }
 
-const DEFAULT_FORMULAS: FormulaConfig[] = [
+// Simplified and integrated analysis tools from Props Analytics
+const DEFAULT_FORMULAS: AnalysisTool[] = [
+  // === PROJECTION TOOLS ===
+  {
+    id: "base_projection",
+    name: "Base Projection",
+    description: "Calculate projected stats using season averages and minutes",
+    category: "projection",
+    enabled: true,
+    type: "toggle"
+  },
+  {
+    id: "minutes_adjustment",
+    name: "Minutes Adjustment",
+    description: "Adjust projection based on expected vs average minutes",
+    category: "projection",
+    enabled: true,
+    type: "slider",
+    sliderConfig: { min: 0.7, max: 1.3, step: 0.05, default: 1.0, unit: "x" }
+  },
+  
+  // === CONTEXT TOOLS ===
   {
     id: "home_court",
     name: "Home Court Advantage",
-    description: "Adjusts projected score based on home court advantage",
+    description: "Adjusts projection based on home/away (+3.5 pts home)",
+    category: "context",
     enabled: true,
     type: "slider",
     sliderConfig: { min: 0, max: 8, step: 0.5, default: 3.5, unit: "pts" }
@@ -110,7 +133,8 @@ const DEFAULT_FORMULAS: FormulaConfig[] = [
   {
     id: "rest_days",
     name: "Rest Days Factor",
-    description: "Adjusts for team fatigue based on rest between games",
+    description: "Adjusts for fatigue (B2B: -3pts, 2+ days: +1.5pts)",
+    category: "context",
     enabled: true,
     type: "dropdown",
     dropdownConfig: {
@@ -123,17 +147,64 @@ const DEFAULT_FORMULAS: FormulaConfig[] = [
     }
   },
   {
-    id: "pace_adjust",
-    name: "Pace Adjustment",
-    description: "Adjusts totals based on team pace factors",
+    id: "pace_factor",
+    name: "Pace Factor",
+    description: "Adjusts totals based on team pace (possessions per game)",
+    category: "context",
     enabled: true,
     type: "slider",
-    sliderConfig: { min: 0.8, max: 1.2, step: 0.02, default: 1.0, unit: "x" }
+    sliderConfig: { min: 0.85, max: 1.15, step: 0.01, default: 1.0, unit: "x" }
+  },
+  {
+    id: "matchup_rating",
+    name: "Matchup Rating",
+    description: "Opponent defensive rating adjustment",
+    category: "context",
+    enabled: false,
+    type: "dropdown",
+    dropdownConfig: {
+      options: [
+        { value: "elite", label: "Elite Defense (-8%)" },
+        { value: "good", label: "Good Defense (-4%)" },
+        { value: "avg", label: "Average Defense (0%)" },
+        { value: "poor", label: "Poor Defense (+4%)" },
+        { value: "bad", label: "Bad Defense (+8%)" },
+      ],
+      default: "avg"
+    }
+  },
+  
+  // === VARIANCE TOOLS ===
+  {
+    id: "variance_analysis",
+    name: "Variance Analysis",
+    description: "Analyze consistency using standard deviation",
+    category: "variance",
+    enabled: false,
+    type: "toggle"
+  },
+  {
+    id: "hit_rate",
+    name: "Hit Rate Calculator",
+    description: "Calculate historical over/under hit percentage",
+    category: "variance",
+    enabled: false,
+    type: "toggle"
+  },
+  {
+    id: "monte_carlo",
+    name: "Monte Carlo Simulation",
+    description: "Run 10,000 simulations for probability ranges",
+    category: "variance",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: 1000, max: 50000, step: 1000, default: 10000, unit: " sims" }
   },
   {
     id: "recent_form",
     name: "Recent Form Weight",
-    description: "Weight given to last N games vs season average",
+    description: "Weight recent games vs season average",
+    category: "variance",
     enabled: false,
     type: "both",
     sliderConfig: { min: 0, max: 100, step: 5, default: 30, unit: "%" },
@@ -146,30 +217,54 @@ const DEFAULT_FORMULAS: FormulaConfig[] = [
       default: "10"
     }
   },
+  
+  // === GAME LINE TOOLS ===
+  {
+    id: "spread_analysis",
+    name: "Spread Analysis",
+    description: "Analyze point spread using team ratings",
+    category: "game",
+    enabled: false,
+    type: "toggle"
+  },
+  {
+    id: "total_projection",
+    name: "Total Projection",
+    description: "Project game total using ORTG/DRTG and pace",
+    category: "game",
+    enabled: false,
+    type: "toggle"
+  },
   {
     id: "injury_impact",
     name: "Injury Impact",
-    description: "Adjusts lines when key players are out",
+    description: "Adjust lines for key player absences",
+    category: "game",
     enabled: false,
     type: "dropdown",
     dropdownConfig: {
       options: [
         { value: "none", label: "No Key Injuries" },
-        { value: "star_out", label: "Star Player Out (-5 to +5 pts)" },
-        { value: "multiple", label: "Multiple Starters Out (-8 to +8 pts)" },
+        { value: "role", label: "Role Player Out (±2 pts)" },
+        { value: "starter", label: "Starter Out (±4 pts)" },
+        { value: "star", label: "Star Player Out (±6 pts)" },
+        { value: "multiple", label: "Multiple Starters Out (±8 pts)" },
       ],
       default: "none"
     }
   },
-  {
-    id: "h2h_history",
-    name: "Head-to-Head History",
-    description: "Factors in historical matchup performance",
-    enabled: false,
-    type: "slider",
-    sliderConfig: { min: 0, max: 50, step: 5, default: 15, unit: "%" }
-  },
 ];
+
+// Group tools by category for display
+const TOOL_CATEGORIES = [
+  { id: "projection", name: "Projection Tools", icon: "📊" },
+  { id: "context", name: "Context Adjustments", icon: "🎯" },
+  { id: "variance", name: "Variance Analysis", icon: "📈" },
+  { id: "game", name: "Game Line Tools", icon: "🏀" },
+];
+
+// Legacy type alias for compatibility
+type FormulaConfig = AnalysisTool;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -422,57 +517,60 @@ function PlayerDetailPanel({
   );
 }
 
-// Formula Tool Component
-function FormulaTool({ 
-  formula, 
+// Analysis Tool Component
+function AnalysisToolItem({ 
+  tool, 
   onToggle, 
   onSliderChange, 
   onDropdownChange,
   sliderValue,
   dropdownValue
 }: { 
-  formula: FormulaConfig;
+  tool: AnalysisTool;
   onToggle: (enabled: boolean) => void;
   onSliderChange?: (value: number) => void;
   onDropdownChange?: (value: string) => void;
   sliderValue?: number;
   dropdownValue?: string;
 }) {
+  // For toggle-only tools, just show the switch
+  const isToggleOnly = tool.type === "toggle";
+  
   return (
     <div className={`p-3 rounded-lg border transition-all ${
-      formula.enabled 
+      tool.enabled 
         ? "bg-slate-800/50 border-primary/30" 
         : "bg-slate-900/30 border-slate-800/50 opacity-60"
     }`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-white">{formula.name}</p>
-          <p className="text-xs text-slate-400">{formula.description}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex-1 pr-3">
+          <p className="text-sm font-medium text-white">{tool.name}</p>
+          <p className="text-xs text-slate-400">{tool.description}</p>
         </div>
         <Switch 
-          checked={formula.enabled} 
+          checked={tool.enabled} 
           onCheckedChange={onToggle}
           className="data-[state=checked]:bg-primary"
         />
       </div>
       
-      {formula.enabled && (
+      {tool.enabled && !isToggleOnly && (
         <div className="mt-3 space-y-3">
           {/* Slider */}
-          {formula.sliderConfig && (formula.type === "slider" || formula.type === "both") && (
+          {tool.sliderConfig && (tool.type === "slider" || tool.type === "both") && (
             <div className="space-y-2">
               <div className="flex justify-between text-xs text-slate-400">
-                <span>{formula.sliderConfig.min}{formula.sliderConfig.unit}</span>
+                <span>{tool.sliderConfig.min}{tool.sliderConfig.unit}</span>
                 <span className="text-primary font-medium">
-                  {sliderValue ?? formula.sliderConfig.default}{formula.sliderConfig.unit}
+                  {sliderValue ?? tool.sliderConfig.default}{tool.sliderConfig.unit}
                 </span>
-                <span>{formula.sliderConfig.max}{formula.sliderConfig.unit}</span>
+                <span>{tool.sliderConfig.max}{tool.sliderConfig.unit}</span>
               </div>
               <Slider
-                value={[sliderValue ?? formula.sliderConfig.default]}
-                min={formula.sliderConfig.min}
-                max={formula.sliderConfig.max}
-                step={formula.sliderConfig.step}
+                value={[sliderValue ?? tool.sliderConfig.default]}
+                min={tool.sliderConfig.min}
+                max={tool.sliderConfig.max}
+                step={tool.sliderConfig.step}
                 onValueChange={(v) => onSliderChange?.(v[0])}
                 className="[&_[role=slider]]:bg-primary"
               />
@@ -480,16 +578,16 @@ function FormulaTool({
           )}
           
           {/* Dropdown */}
-          {formula.dropdownConfig && (formula.type === "dropdown" || formula.type === "both") && (
+          {tool.dropdownConfig && (tool.type === "dropdown" || tool.type === "both") && (
             <Select 
-              value={dropdownValue ?? formula.dropdownConfig.default}
+              value={dropdownValue ?? tool.dropdownConfig.default}
               onValueChange={onDropdownChange}
             >
               <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
-                {formula.dropdownConfig.options.map(opt => (
+                {tool.dropdownConfig.options.map(opt => (
                   <SelectItem 
                     key={opt.value} 
                     value={opt.value}
@@ -790,30 +888,59 @@ export default function GamePropsNew() {
           </div>
         </div>
 
-        {/* Formula Tools Panel */}
+        {/* Analysis Tools Panel */}
         {showFormulas && (
           <div className="p-4 bg-slate-900/80 border-b border-slate-800">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-semibold text-white">Analysis Tools</h3>
+                <h3 className="text-sm font-semibold text-white">Props Analytics Tools</h3>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowFormulas(false)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {formulas.map(formula => (
-                <FormulaTool
-                  key={formula.id}
-                  formula={formula}
-                  onToggle={(enabled) => toggleFormula(formula.id, enabled)}
-                  onSliderChange={(v) => updateFormulaValue(formula.id, "slider", v)}
-                  onDropdownChange={(v) => updateFormulaValue(formula.id, "dropdown", v)}
-                  sliderValue={formulaValues[formula.id]?.slider}
-                  dropdownValue={formulaValues[formula.id]?.dropdown}
-                />
-              ))}
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+              {TOOL_CATEGORIES.map(category => {
+                const categoryTools = formulas.filter(f => f.category === category.id);
+                if (categoryTools.length === 0) return null;
+                
+                return (
+                  <div key={category.id}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span>{category.icon}</span>
+                      <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">{category.name}</h4>
+                      <span className="text-xs text-slate-500">({categoryTools.filter(t => t.enabled).length}/{categoryTools.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {categoryTools.map(tool => (
+                        <AnalysisToolItem
+                          key={tool.id}
+                          tool={tool}
+                          onToggle={(enabled) => toggleFormula(tool.id, enabled)}
+                          onSliderChange={(v) => updateFormulaValue(tool.id, "slider", v)}
+                          onDropdownChange={(v) => updateFormulaValue(tool.id, "dropdown", v)}
+                          sliderValue={formulaValues[tool.id]?.slider}
+                          dropdownValue={formulaValues[tool.id]?.dropdown}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                {formulas.filter(f => f.enabled).length} of {formulas.length} tools active
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs"
+                onClick={() => setFormulas(DEFAULT_FORMULAS)}
+              >
+                Reset to Defaults
+              </Button>
             </div>
           </div>
         )}
@@ -1028,30 +1155,59 @@ export default function GamePropsNew() {
         </div>
       </div>
 
-      {/* Formula Tools Panel */}
+      {/* Analysis Tools Panel */}
       {showFormulas && (
         <div className="p-4 bg-slate-900/80 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-white">Analysis Tools</h3>
+              <h3 className="text-sm font-semibold text-white">Props Analytics Tools</h3>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setShowFormulas(false)}>
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <div className="space-y-2 max-h-[250px] overflow-y-auto">
-            {formulas.map(formula => (
-              <FormulaTool
-                key={formula.id}
-                formula={formula}
-                onToggle={(enabled) => toggleFormula(formula.id, enabled)}
-                onSliderChange={(v) => updateFormulaValue(formula.id, "slider", v)}
-                onDropdownChange={(v) => updateFormulaValue(formula.id, "dropdown", v)}
-                sliderValue={formulaValues[formula.id]?.slider}
-                dropdownValue={formulaValues[formula.id]?.dropdown}
-              />
-            ))}
+          <div className="space-y-4 max-h-[350px] overflow-y-auto">
+            {TOOL_CATEGORIES.map(category => {
+              const categoryTools = formulas.filter(f => f.category === category.id);
+              if (categoryTools.length === 0) return null;
+              
+              return (
+                <div key={category.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>{category.icon}</span>
+                    <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">{category.name}</h4>
+                    <span className="text-xs text-slate-500">({categoryTools.filter(t => t.enabled).length}/{categoryTools.length})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {categoryTools.map(tool => (
+                      <AnalysisToolItem
+                        key={tool.id}
+                        tool={tool}
+                        onToggle={(enabled) => toggleFormula(tool.id, enabled)}
+                        onSliderChange={(v) => updateFormulaValue(tool.id, "slider", v)}
+                        onDropdownChange={(v) => updateFormulaValue(tool.id, "dropdown", v)}
+                        sliderValue={formulaValues[tool.id]?.slider}
+                        dropdownValue={formulaValues[tool.id]?.dropdown}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+            <span className="text-xs text-slate-400">
+              {formulas.filter(f => f.enabled).length} of {formulas.length} tools active
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              onClick={() => setFormulas(DEFAULT_FORMULAS)}
+            >
+              Reset to Defaults
+            </Button>
           </div>
         </div>
       )}
