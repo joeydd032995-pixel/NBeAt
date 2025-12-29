@@ -238,20 +238,20 @@ const DEFAULT_FORMULAS: AnalysisTool[] = [
   {
     id: "spread_adjustment",
     name: "Spread Adjustment",
-    description: "Manual points adjustment to spread",
+    description: "Manual points adjustment to spread (-25.5 to +25.5)",
     category: "game",
     enabled: false,
     type: "slider",
-    sliderConfig: { min: -5, max: 5, step: 0.25, default: 0, unit: " pts" }
+    sliderConfig: { min: -25.5, max: 25.5, step: 0.5, default: 0, unit: " pts" }
   },
   {
     id: "total_adjustment",
     name: "Total Adjustment",
-    description: "Manual points adjustment to game total",
+    description: "Manual points adjustment to game total (-25.5 to +25.5)",
     category: "game",
     enabled: false,
     type: "slider",
-    sliderConfig: { min: -10, max: 10, step: 0.25, default: 0, unit: " pts" }
+    sliderConfig: { min: -25.5, max: 25.5, step: 0.5, default: 0, unit: " pts" }
   },
   {
     id: "injury_impact",
