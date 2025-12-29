@@ -73,75 +73,7 @@ const TEAM_ABBR: Record<string, string> = {
   "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS",
 };
 
-// Mock games data for when API is unavailable
-const MOCK_GAMES = [
-  {
-    id: "game1",
-    homeTeam: "Milwaukee Bucks",
-    awayTeam: "Charlotte Hornets",
-    commence_time: new Date(Date.now() + 3600000).toISOString(),
-    odds: {
-      moneyline: { home: -280, away: +230 },
-      spread: { home: -6.5, away: +6.5, homeOdds: -110, awayOdds: -110 },
-      total: { line: 224.5, overOdds: -110, underOdds: -110 }
-    }
-  },
-  {
-    id: "game2",
-    homeTeam: "Boston Celtics",
-    awayTeam: "Miami Heat",
-    commence_time: new Date(Date.now() + 7200000).toISOString(),
-    odds: {
-      moneyline: { home: -185, away: +155 },
-      spread: { home: -4.5, away: +4.5, homeOdds: -110, awayOdds: -110 },
-      total: { line: 218.5, overOdds: -108, underOdds: -112 }
-    }
-  },
-  {
-    id: "game3",
-    homeTeam: "Los Angeles Lakers",
-    awayTeam: "Golden State Warriors",
-    commence_time: new Date(Date.now() + 10800000).toISOString(),
-    odds: {
-      moneyline: { home: +120, away: -140 },
-      spread: { home: +2.5, away: -2.5, homeOdds: -110, awayOdds: -110 },
-      total: { line: 232.5, overOdds: -105, underOdds: -115 }
-    }
-  },
-  {
-    id: "game4",
-    homeTeam: "Denver Nuggets",
-    awayTeam: "Phoenix Suns",
-    commence_time: new Date(Date.now() + 14400000).toISOString(),
-    odds: {
-      moneyline: { home: -150, away: +130 },
-      spread: { home: -3.0, away: +3.0, homeOdds: -110, awayOdds: -110 },
-      total: { line: 226.0, overOdds: -110, underOdds: -110 }
-    }
-  },
-  {
-    id: "game5",
-    homeTeam: "Dallas Mavericks",
-    awayTeam: "Oklahoma City Thunder",
-    commence_time: new Date(Date.now() + 18000000).toISOString(),
-    odds: {
-      moneyline: { home: +135, away: -155 },
-      spread: { home: +3.5, away: -3.5, homeOdds: -110, awayOdds: -110 },
-      total: { line: 228.5, overOdds: -112, underOdds: -108 }
-    }
-  },
-  {
-    id: "game6",
-    homeTeam: "Cleveland Cavaliers",
-    awayTeam: "New York Knicks",
-    commence_time: new Date(Date.now() + 21600000).toISOString(),
-    odds: {
-      moneyline: { home: -165, away: +145 },
-      spread: { home: -3.5, away: +3.5, homeOdds: -108, awayOdds: -112 },
-      total: { line: 215.5, overOdds: -110, underOdds: -110 }
-    }
-  }
-];
+
 
 // ============================================================================
 // FORMULA TOOLS CONFIGURATION
@@ -585,11 +517,8 @@ export default function GamePropsNew() {
   }, [searchString]);
 
   // Fetch data
-  const { data: gamesFromApi, isLoading: gamesLoading } = trpc.odds.getUpcomingGames.useQuery();
+  const { data: games, isLoading: gamesLoading } = trpc.odds.getUpcomingGames.useQuery();
   const { data: allPlayers } = trpc.nba.getAllPlayers.useQuery();
-  
-  // Use API games or fallback to mock games
-  const games = gamesFromApi && gamesFromApi.length > 0 ? gamesFromApi : MOCK_GAMES;
 
   // Auto-expand prop from query param
   useEffect(() => {
