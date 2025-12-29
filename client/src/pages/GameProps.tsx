@@ -73,6 +73,76 @@ const TEAM_ABBR: Record<string, string> = {
   "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS",
 };
 
+// Mock games data for when API is unavailable
+const MOCK_GAMES = [
+  {
+    id: "game1",
+    homeTeam: "Milwaukee Bucks",
+    awayTeam: "Charlotte Hornets",
+    commence_time: new Date(Date.now() + 3600000).toISOString(),
+    odds: {
+      moneyline: { home: -280, away: +230 },
+      spread: { home: -6.5, away: +6.5, homeOdds: -110, awayOdds: -110 },
+      total: { line: 224.5, overOdds: -110, underOdds: -110 }
+    }
+  },
+  {
+    id: "game2",
+    homeTeam: "Boston Celtics",
+    awayTeam: "Miami Heat",
+    commence_time: new Date(Date.now() + 7200000).toISOString(),
+    odds: {
+      moneyline: { home: -185, away: +155 },
+      spread: { home: -4.5, away: +4.5, homeOdds: -110, awayOdds: -110 },
+      total: { line: 218.5, overOdds: -108, underOdds: -112 }
+    }
+  },
+  {
+    id: "game3",
+    homeTeam: "Los Angeles Lakers",
+    awayTeam: "Golden State Warriors",
+    commence_time: new Date(Date.now() + 10800000).toISOString(),
+    odds: {
+      moneyline: { home: +120, away: -140 },
+      spread: { home: +2.5, away: -2.5, homeOdds: -110, awayOdds: -110 },
+      total: { line: 232.5, overOdds: -105, underOdds: -115 }
+    }
+  },
+  {
+    id: "game4",
+    homeTeam: "Denver Nuggets",
+    awayTeam: "Phoenix Suns",
+    commence_time: new Date(Date.now() + 14400000).toISOString(),
+    odds: {
+      moneyline: { home: -150, away: +130 },
+      spread: { home: -3.0, away: +3.0, homeOdds: -110, awayOdds: -110 },
+      total: { line: 226.0, overOdds: -110, underOdds: -110 }
+    }
+  },
+  {
+    id: "game5",
+    homeTeam: "Dallas Mavericks",
+    awayTeam: "Oklahoma City Thunder",
+    commence_time: new Date(Date.now() + 18000000).toISOString(),
+    odds: {
+      moneyline: { home: +135, away: -155 },
+      spread: { home: +3.5, away: -3.5, homeOdds: -110, awayOdds: -110 },
+      total: { line: 228.5, overOdds: -112, underOdds: -108 }
+    }
+  },
+  {
+    id: "game6",
+    homeTeam: "Cleveland Cavaliers",
+    awayTeam: "New York Knicks",
+    commence_time: new Date(Date.now() + 21600000).toISOString(),
+    odds: {
+      moneyline: { home: -165, away: +145 },
+      spread: { home: -3.5, away: +3.5, homeOdds: -108, awayOdds: -112 },
+      total: { line: 215.5, overOdds: -110, underOdds: -110 }
+    }
+  }
+];
+
 // ============================================================================
 // FORMULA TOOLS CONFIGURATION
 // ============================================================================
@@ -515,8 +585,11 @@ export default function GamePropsNew() {
   }, [searchString]);
 
   // Fetch data
-  const { data: games, isLoading: gamesLoading } = trpc.games.getUpcoming.useQuery();
-  const { data: allPlayers } = trpc.players.getAll.useQuery();
+  const { data: gamesFromApi, isLoading: gamesLoading } = trpc.odds.getUpcomingGames.useQuery();
+  const { data: allPlayers } = trpc.nba.getAllPlayers.useQuery();
+  
+  // Use API games or fallback to mock games
+  const games = gamesFromApi && gamesFromApi.length > 0 ? gamesFromApi : MOCK_GAMES;
 
   // Auto-expand prop from query param
   useEffect(() => {
@@ -630,37 +703,49 @@ export default function GamePropsNew() {
             
             {/* Sport Icons Row */}
             <div className="flex items-center gap-4 overflow-x-auto pb-2">
-              <div className="flex flex-col items-center gap-1 min-w-[50px]">
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+              <button 
+                onClick={() => setLocation("/")}
+                className="flex flex-col items-center gap-1 min-w-[50px] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
                   <Home className="w-5 h-5 text-slate-400" />
                 </div>
                 <span className="text-xs text-slate-400">Home</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 min-w-[50px]">
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+              </button>
+              <button 
+                onClick={() => setLocation("/live-odds")}
+                className="flex flex-col items-center gap-1 min-w-[50px] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
                   <Radio className="w-5 h-5 text-slate-400" />
                 </div>
                 <span className="text-xs text-slate-400">In Play</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 min-w-[50px] relative">
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+              </button>
+              <button 
+                onClick={() => setLocation("/betting-analyzer")}
+                className="flex flex-col items-center gap-1 min-w-[50px] relative cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
                   <Gift className="w-5 h-5 text-slate-400" />
                 </div>
                 <Badge className="absolute -top-1 -right-1 bg-primary text-xs px-1.5 py-0">10</Badge>
                 <span className="text-xs text-slate-400">Offers</span>
-              </div>
+              </button>
               <div className="flex flex-col items-center gap-1 min-w-[50px]">
                 <div className="w-10 h-10 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
                   <span className="text-lg">🏀</span>
                 </div>
                 <span className="text-xs text-primary font-medium">NBA</span>
               </div>
-              <div className="flex flex-col items-center gap-1 min-w-[50px]">
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+              <button 
+                onClick={() => setLocation("/player-stats")}
+                className="flex flex-col items-center gap-1 min-w-[50px] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
                   <Menu className="w-5 h-5 text-slate-400" />
                 </div>
                 <span className="text-xs text-slate-400">More</span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
