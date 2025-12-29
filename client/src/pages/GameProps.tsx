@@ -100,15 +100,17 @@ interface AnalysisTool {
 }
 
 // Simplified and integrated analysis tools from Props Analytics
+// All numeric values use 0.25 increments where applicable
 const DEFAULT_FORMULAS: AnalysisTool[] = [
   // === PROJECTION TOOLS ===
   {
     id: "base_projection",
-    name: "Base Projection",
-    description: "Calculate projected stats using season averages and minutes",
+    name: "Base Projection Multiplier",
+    description: "Multiply season average by this factor",
     category: "projection",
     enabled: true,
-    type: "toggle"
+    type: "slider",
+    sliderConfig: { min: 0.75, max: 1.25, step: 0.25, default: 1.0, unit: "x" }
   },
   {
     id: "minutes_adjustment",
@@ -117,31 +119,42 @@ const DEFAULT_FORMULAS: AnalysisTool[] = [
     category: "projection",
     enabled: true,
     type: "slider",
-    sliderConfig: { min: 0.7, max: 1.3, step: 0.05, default: 1.0, unit: "x" }
+    sliderConfig: { min: 0.75, max: 1.25, step: 0.25, default: 1.0, unit: "x" }
+  },
+  {
+    id: "usage_rate",
+    name: "Usage Rate Modifier",
+    description: "Adjust for player's share of team possessions",
+    category: "projection",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: -10, max: 10, step: 0.25, default: 0, unit: "%" }
   },
   
   // === CONTEXT TOOLS ===
   {
     id: "home_court",
     name: "Home Court Advantage",
-    description: "Adjusts projection based on home/away (+3.5 pts home)",
+    description: "Points adjustment for home/away games",
     category: "context",
     enabled: true,
     type: "slider",
-    sliderConfig: { min: 0, max: 8, step: 0.5, default: 3.5, unit: "pts" }
+    sliderConfig: { min: 0, max: 8, step: 0.25, default: 3.5, unit: " pts" }
   },
   {
     id: "rest_days",
-    name: "Rest Days Factor",
-    description: "Adjusts for fatigue (B2B: -3pts, 2+ days: +1.5pts)",
+    name: "Rest Days Adjustment",
+    description: "Points adjustment based on days of rest",
     category: "context",
     enabled: true,
-    type: "dropdown",
+    type: "both",
+    sliderConfig: { min: -5, max: 3, step: 0.25, default: 0, unit: " pts" },
     dropdownConfig: {
       options: [
-        { value: "b2b", label: "Back-to-Back (-3 pts)" },
-        { value: "1day", label: "1 Day Rest (0 pts)" },
-        { value: "2day", label: "2+ Days Rest (+1.5 pts)" },
+        { value: "b2b", label: "Back-to-Back" },
+        { value: "1day", label: "1 Day Rest" },
+        { value: "2day", label: "2 Days Rest" },
+        { value: "3plus", label: "3+ Days Rest" },
       ],
       default: "1day"
     }
@@ -149,109 +162,124 @@ const DEFAULT_FORMULAS: AnalysisTool[] = [
   {
     id: "pace_factor",
     name: "Pace Factor",
-    description: "Adjusts totals based on team pace (possessions per game)",
+    description: "Multiplier based on game pace (possessions)",
     category: "context",
     enabled: true,
     type: "slider",
-    sliderConfig: { min: 0.85, max: 1.15, step: 0.01, default: 1.0, unit: "x" }
+    sliderConfig: { min: 0.75, max: 1.25, step: 0.25, default: 1.0, unit: "x" }
   },
   {
-    id: "matchup_rating",
-    name: "Matchup Rating",
-    description: "Opponent defensive rating adjustment",
+    id: "matchup_adjustment",
+    name: "Matchup Adjustment",
+    description: "Percentage adjustment vs opponent defense",
     category: "context",
     enabled: false,
-    type: "dropdown",
-    dropdownConfig: {
-      options: [
-        { value: "elite", label: "Elite Defense (-8%)" },
-        { value: "good", label: "Good Defense (-4%)" },
-        { value: "avg", label: "Average Defense (0%)" },
-        { value: "poor", label: "Poor Defense (+4%)" },
-        { value: "bad", label: "Bad Defense (+8%)" },
-      ],
-      default: "avg"
-    }
+    type: "slider",
+    sliderConfig: { min: -10, max: 10, step: 0.25, default: 0, unit: "%" }
+  },
+  {
+    id: "travel_fatigue",
+    name: "Travel Fatigue",
+    description: "Points deduction for road travel",
+    category: "context",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: 0, max: 3, step: 0.25, default: 0, unit: " pts" }
   },
   
   // === VARIANCE TOOLS ===
   {
-    id: "variance_analysis",
-    name: "Variance Analysis",
-    description: "Analyze consistency using standard deviation",
-    category: "variance",
-    enabled: false,
-    type: "toggle"
-  },
-  {
-    id: "hit_rate",
-    name: "Hit Rate Calculator",
-    description: "Calculate historical over/under hit percentage",
-    category: "variance",
-    enabled: false,
-    type: "toggle"
-  },
-  {
-    id: "monte_carlo",
-    name: "Monte Carlo Simulation",
-    description: "Run 10,000 simulations for probability ranges",
+    id: "confidence_level",
+    name: "Confidence Level",
+    description: "Statistical confidence for projections",
     category: "variance",
     enabled: false,
     type: "slider",
-    sliderConfig: { min: 1000, max: 50000, step: 1000, default: 10000, unit: " sims" }
+    sliderConfig: { min: 50, max: 99, step: 0.25, default: 75, unit: "%" }
   },
   {
-    id: "recent_form",
+    id: "std_deviation",
+    name: "Std Deviation Multiplier",
+    description: "Adjust variance range width",
+    category: "variance",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: 0.5, max: 2, step: 0.25, default: 1.0, unit: "x" }
+  },
+  {
+    id: "recent_form_weight",
     name: "Recent Form Weight",
-    description: "Weight recent games vs season average",
+    description: "Weight given to recent games vs season",
     category: "variance",
     enabled: false,
     type: "both",
-    sliderConfig: { min: 0, max: 100, step: 5, default: 30, unit: "%" },
+    sliderConfig: { min: 0, max: 100, step: 0.25, default: 25, unit: "%" },
     dropdownConfig: {
       options: [
+        { value: "3", label: "Last 3 Games" },
         { value: "5", label: "Last 5 Games" },
         { value: "10", label: "Last 10 Games" },
         { value: "15", label: "Last 15 Games" },
       ],
-      default: "10"
+      default: "5"
     }
+  },
+  {
+    id: "consistency_bonus",
+    name: "Consistency Bonus",
+    description: "Bonus % for low-variance players",
+    category: "variance",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: 0, max: 10, step: 0.25, default: 2.5, unit: "%" }
   },
   
   // === GAME LINE TOOLS ===
   {
-    id: "spread_analysis",
-    name: "Spread Analysis",
-    description: "Analyze point spread using team ratings",
+    id: "spread_adjustment",
+    name: "Spread Adjustment",
+    description: "Manual points adjustment to spread",
     category: "game",
     enabled: false,
-    type: "toggle"
+    type: "slider",
+    sliderConfig: { min: -5, max: 5, step: 0.25, default: 0, unit: " pts" }
   },
   {
-    id: "total_projection",
-    name: "Total Projection",
-    description: "Project game total using ORTG/DRTG and pace",
+    id: "total_adjustment",
+    name: "Total Adjustment",
+    description: "Manual points adjustment to game total",
     category: "game",
     enabled: false,
-    type: "toggle"
+    type: "slider",
+    sliderConfig: { min: -10, max: 10, step: 0.25, default: 0, unit: " pts" }
   },
   {
     id: "injury_impact",
     name: "Injury Impact",
-    description: "Adjust lines for key player absences",
+    description: "Points adjustment for injuries",
     category: "game",
     enabled: false,
-    type: "dropdown",
+    type: "both",
+    sliderConfig: { min: -8, max: 8, step: 0.25, default: 0, unit: " pts" },
     dropdownConfig: {
       options: [
         { value: "none", label: "No Key Injuries" },
-        { value: "role", label: "Role Player Out (±2 pts)" },
-        { value: "starter", label: "Starter Out (±4 pts)" },
-        { value: "star", label: "Star Player Out (±6 pts)" },
-        { value: "multiple", label: "Multiple Starters Out (±8 pts)" },
+        { value: "role", label: "Role Player Out" },
+        { value: "starter", label: "Starter Out" },
+        { value: "star", label: "Star Player Out" },
+        { value: "multiple", label: "Multiple Out" },
       ],
       default: "none"
     }
+  },
+  {
+    id: "public_betting",
+    name: "Public Betting Fade",
+    description: "Adjustment against heavy public action",
+    category: "game",
+    enabled: false,
+    type: "slider",
+    sliderConfig: { min: -5, max: 5, step: 0.25, default: 0, unit: "%" }
   },
 ];
 
