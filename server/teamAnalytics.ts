@@ -59,7 +59,8 @@ export async function getTeamAnalytics(teamId?: number): Promise<TeamStats[]> {
 
     // Calculate averages
     type Player = typeof roster[0];
-    const avgGames = roster.reduce((sum: number, p: Player) => sum + (Number(p.gamesPlayed) || 0), 0) / roster.length;
+    // Team games played = max games played by any player on roster (team plays same # of games)
+    const teamGamesPlayed = Math.max(...roster.map((p: Player) => Number(p.gamesPlayed) || 0));
     const avgPPG = roster.reduce((sum: number, p: Player) => sum + (Number(p.ppg) || 0), 0) / roster.length;
     const avgRPG = roster.reduce((sum: number, p: Player) => sum + (Number(p.rpg) || 0), 0) / roster.length;
     const avgAPG = roster.reduce((sum: number, p: Player) => sum + (Number(p.apg) || 0), 0) / roster.length;
@@ -97,7 +98,7 @@ export async function getTeamAnalytics(teamId?: number): Promise<TeamStats[]> {
       teamId: tId,
       teamName,
       teamAbbreviation: teamAbbr,
-      gamesPlayed: Math.round(avgGames),
+      gamesPlayed: teamGamesPlayed,
       offensiveRating: Math.round(offensiveRating * 10) / 10,
       defensiveRating: Math.round(defensiveRating * 10) / 10,
       pace: Math.round(pace * 10) / 10,

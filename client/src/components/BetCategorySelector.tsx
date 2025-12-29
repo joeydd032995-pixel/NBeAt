@@ -409,35 +409,50 @@ export function BetCategorySelector({
     <div className="space-y-6">
       {/* Main Category Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {BET_CATEGORIES.map((category) => (
-          <Card
-            key={category.id}
-            className={`cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
-              selectedCategory?.id === category.id
-                ? "ring-2 ring-primary border-primary"
-                : "hover:border-primary/50"
-            }`}
-            onClick={() => onCategorySelect(category)}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className={`p-2 rounded-lg ${category.color} text-white`}>
-                  {category.icon}
+        {BET_CATEGORIES.map((category) => {
+          const isPlayerProps = category.id === "player_props";
+          const borderColor = isPlayerProps ? "border-primary/20" : "border-secondary/20";
+          const selectedBorderColor = isPlayerProps ? "ring-primary border-primary" : "ring-secondary border-secondary";
+          const badgeBorderColor = isPlayerProps ? "border-primary/30 text-primary" : "border-secondary/30 text-secondary";
+          const badgeHoverBg = isPlayerProps ? "hover:bg-primary/10" : "hover:bg-secondary/10";
+          
+          return (
+            <Card
+              key={category.id}
+              className={`cursor-pointer transition-all duration-200 ${borderColor} ${
+                selectedCategory?.id === category.id
+                  ? `ring-2 ${selectedBorderColor}`
+                  : "hover:border-primary/50"
+              }`}
+              onClick={() => onCategorySelect(category)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${category.color} text-white`}>
+                    {category.icon}
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{category.name}</CardTitle>
+                    <CardDescription className="text-xs">{category.description}</CardDescription>
+                  </div>
                 </div>
-                {selectedCategory?.id === category.id && (
-                  <Badge variant="default">Selected</Badge>
-                )}
-              </div>
-              <CardTitle className="text-lg mt-2">{category.name}</CardTitle>
-              <CardDescription>{category.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground">
-                {category.subcategories.length} bet types available
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {category.subcategories.map((sub) => (
+                    <Badge 
+                      key={sub.id} 
+                      variant="outline" 
+                      className={`justify-center ${badgeBorderColor} ${badgeHoverBg} transition-colors`}
+                    >
+                      {sub.shortName}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Subcategory Selection */}

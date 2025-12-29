@@ -125,11 +125,12 @@ export default function Home() {
       accent: "yellow"
     },
     {
-      title: "AI Betting Assistant",
+      title: "AI Betting Assistant (Coming Soon!)",
       description: "LLM-powered chatbot for strategy advice and personalized recommendations",
       icon: MessageSquare,
-      href: "/ai-assistant",
-      accent: "coral"
+      href: "",
+      accent: "coral",
+      disabled: true
     },
     {
       title: "Custom Alerts",
@@ -277,59 +278,6 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Bet Types Overview */}
-      <div className="container py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Player Props */}
-          <Card className="bg-card border-primary/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-foreground">Player Props</CardTitle>
-                  <CardDescription className="text-xs">Individual player performance bets</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                {["Points", "Rebounds", "Assists", "Steals", "Blocks", "PRA", "Double Double", "P+A", "R+A", "P+R", "S+B", "3PM", "2PM", "Combined 2P"].map((prop) => (
-                  <Badge key={prop} variant="outline" className="justify-center border-primary/30 text-primary hover:bg-primary/10 transition-colors">
-                    {prop}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Game Lines */}
-          <Card className="bg-card border-secondary/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-secondary/10">
-                  <Trophy className="w-5 h-5 text-secondary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-foreground">Game Lines</CardTitle>
-                  <CardDescription className="text-xs">Team and game outcome bets</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                {["Moneyline", "Spread", "O/U Total", "Q1 ML", "Q1 Spread", "Q1 O/U", "H1 ML", "H1 Spread", "H1 O/U", "H2 ML", "H2 Spread", "H2 O/U", "Alt Spread", "Alt Total"].map((line) => (
-                  <Badge key={line} variant="outline" className="justify-center border-secondary/30 text-secondary hover:bg-secondary/10 transition-colors">
-                    {line}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
       {/* Features Grid */}
       <div className="container py-8">
         <h2 className="text-xl font-semibold text-foreground mb-6">All Tools</h2>
@@ -337,19 +285,33 @@ export default function Home() {
           {features.map((feature) => {
             const Icon = feature.icon;
             const isCoralAccent = feature.accent === "coral";
+            const isDisabled = 'disabled' in feature && feature.disabled;
+            
+            const cardContent = (
+              <Card className={`h-full bg-card border-border transition-all duration-200 ${
+                isDisabled 
+                  ? 'opacity-60 cursor-not-allowed' 
+                  : 'hover:border-primary/40 cursor-pointer group card-hover'
+              }`}>
+                <CardHeader className="pb-3">
+                  <div className={`mb-3 p-2 rounded-lg w-fit ${isCoralAccent ? 'bg-primary/10' : 'bg-secondary/10'}`}>
+                    <Icon className={`w-6 h-6 ${isCoralAccent ? 'text-primary' : 'text-secondary'} ${!isDisabled && 'group-hover:scale-110'} transition-transform`} />
+                  </div>
+                  <CardTitle className="text-base font-semibold text-foreground">{feature.title}</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            );
+            
+            if (isDisabled) {
+              return <div key={feature.title}>{cardContent}</div>;
+            }
+            
             return (
               <Link key={feature.title} href={feature.href}>
-                <Card className="h-full bg-card border-border hover:border-primary/40 transition-all duration-200 cursor-pointer group card-hover">
-                  <CardHeader className="pb-3">
-                    <div className={`mb-3 p-2 rounded-lg w-fit ${isCoralAccent ? 'bg-primary/10' : 'bg-secondary/10'}`}>
-                      <Icon className={`w-6 h-6 ${isCoralAccent ? 'text-primary' : 'text-secondary'} group-hover:scale-110 transition-transform`} />
-                    </div>
-                    <CardTitle className="text-base font-semibold text-foreground">{feature.title}</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground leading-relaxed">
-                      {feature.description}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                {cardContent}
               </Link>
             );
           })}
