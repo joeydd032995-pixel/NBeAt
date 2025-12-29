@@ -40,8 +40,8 @@ export default function PlayerStats() {
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
 
-  // Fetch all players
-  const { data: allPlayers, isLoading } = trpc.players.getAll.useQuery();
+  // Fetch all players from NBA router
+  const { data: allPlayers, isLoading } = trpc.nba.getAllPlayers.useQuery();
 
   // Get unique teams sorted alphabetically
   const teams = useMemo(() => {

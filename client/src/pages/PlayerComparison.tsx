@@ -159,8 +159,8 @@ export default function PlayerComparison() {
   const [player1, setPlayer1] = useState<PlayerStats | null>(null);
   const [player2, setPlayer2] = useState<PlayerStats | null>(null);
 
-  // Fetch all players
-  const { data: allPlayers, isLoading } = trpc.players.getAll.useQuery();
+  // Fetch all players from NBA router
+  const { data: allPlayers, isLoading } = trpc.nba.getAllPlayers.useQuery();
 
   // Get unique teams sorted alphabetically
   const teams = useMemo(() => {

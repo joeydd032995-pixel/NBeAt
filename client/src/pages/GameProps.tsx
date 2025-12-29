@@ -826,15 +826,15 @@ export default function GamePropsNew() {
             <div className="text-center py-12 text-slate-400">No upcoming games</div>
           ) : (
             games.map((game) => {
-              const gameDate = new Date(game.gameDate);
-              const timeStr = gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-              const dateStr = gameDate.toLocaleDateString('en-US', { weekday: 'short' });
+              // Use displayTime and displayDate from API, or format from gameTime
+              const timeStr = game.displayTime || (game.gameTime ? new Date(game.gameTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'TBD');
+              const dateStr = game.displayDate || (game.gameTime ? new Date(game.gameTime).toLocaleDateString('en-US', { weekday: 'short' }) : 'TBD');
               
-              // Mock lines for display
-              const homeML = -165 + Math.floor(Math.random() * 200 - 100);
-              const awayML = homeML > 0 ? -(homeML + 30) : Math.abs(homeML) - 30;
-              const spread = (Math.random() * 10 - 5).toFixed(1);
-              const total = (220 + Math.random() * 20).toFixed(1);
+              // Use real odds from API, fallback to generated if not available
+              const homeML = game.moneyline?.home || (-165 + Math.floor(Math.random() * 200 - 100));
+              const awayML = game.moneyline?.away || (homeML > 0 ? -(homeML + 30) : Math.abs(homeML) - 30);
+              const spread = game.spread?.home?.toFixed(1) || (Math.random() * 10 - 5).toFixed(1);
+              const total = game.total?.toFixed(1) || (220 + Math.random() * 20).toFixed(1);
               
               return (
                 <Card 
