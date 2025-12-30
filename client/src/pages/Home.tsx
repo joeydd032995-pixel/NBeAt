@@ -40,26 +40,20 @@ export default function Home() {
       setLocation("/game-dashboard");
     }
   };
-  const primaryTool = {
-    title: "Betting Analyzer",
-    description: "Comprehensive analysis for ALL bet types with formula explanations",
-    href: "/betting-analyzer",
-    features: [
-      "14 Player Props (PTS, REB, AST, PRA, DD, 3PM, S+B, etc.)",
-      "14 Game Lines (ML, Spread, O/U, Q1, H1, H2, Alt Lines)",
-      "60+ Analytical Scripts with Explanations",
-      "Auto-populated Player Stats",
-      "Edge Detection & Confidence Ratings"
-    ]
-  };
-
   const features = [
+    {
+      title: "Betting Analyzer",
+      description: "Comprehensive analysis for ALL bet types with formula explanations",
+      icon: Calculator,
+      href: "/betting-analyzer",
+      accent: "coral"
+    },
     {
       title: "Game Props",
       description: "Browse all player props by game with Over/Under lines and odds",
       icon: Trophy,
       href: "/game-props",
-      accent: "coral"
+      accent: "yellow"
     },
     {
       title: "Game Dashboard",
@@ -193,41 +187,6 @@ export default function Home() {
       </div>
 
 
-
-      {/* Featured Tool - Betting Analyzer */}
-      <div className="container py-6">
-        <Link href={primaryTool.href}>
-          <Card className="bg-card border-primary/30 hover:border-primary/60 transition-all cursor-pointer group card-hover">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-primary text-primary-foreground">
-                    <Calculator className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl text-foreground group-hover:text-primary transition-colors">
-                      {primaryTool.title}
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {primaryTool.description}
-                    </CardDescription>
-                  </div>
-                </div>
-                <ChevronRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {primaryTool.features.map((feature, i) => (
-                  <Badge key={i} variant="secondary" className="bg-muted text-muted-foreground text-xs">
-                    {feature}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
 
       {/* Features Grid */}
       <div className="container py-8">
