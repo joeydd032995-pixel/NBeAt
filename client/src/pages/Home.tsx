@@ -192,63 +192,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Quick Stats Row */}
-      <div className="container pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-card border-border card-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <ArrowUpRight className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">60+</p>
-                  <p className="text-xs text-muted-foreground">Scripts</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border card-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-secondary/10">
-                  <ArrowDownRight className="w-4 h-4 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">28</p>
-                  <p className="text-xs text-muted-foreground">Bet Types</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border card-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">569+</p>
-                  <p className="text-xs text-muted-foreground">Players</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border card-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-secondary/10">
-                  <Trophy className="w-4 h-4 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">30</p>
-                  <p className="text-xs text-muted-foreground">Teams</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+
 
       {/* Featured Tool - Betting Analyzer */}
       <div className="container py-6">
