@@ -1,8 +1,5 @@
-import { Link, useLocation } from "wouter";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   TrendingUp,
   Calculator,
@@ -15,31 +12,10 @@ import {
   AlertCircle,
   Bell,
   Zap,
-  ChevronRight,
-  Trophy,
-  User,
-  ArrowUpRight,
-  ArrowDownRight
+  Trophy
 } from "lucide-react";
 
-type TabType = "overview" | "analytics" | "props" | "games";
-
 export default function Home() {
-  const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
-  
-  // Tab navigation handlers
-  const handleTabClick = (tab: TabType) => {
-    if (tab === "overview") {
-      setActiveTab("overview");
-    } else if (tab === "analytics") {
-      setLocation("/betting-analyzer");
-    } else if (tab === "props") {
-      setLocation("/props-analytics");
-    } else if (tab === "games") {
-      setLocation("/game-dashboard");
-    }
-  };
   const features = [
     {
       title: "Betting Analyzer",
@@ -157,32 +133,6 @@ export default function Home() {
           <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
             Main Dashboard
           </h1>
-          <div className="flex items-center gap-8 text-sm">
-            <button 
-              onClick={() => handleTabClick("overview")}
-              className={`font-medium transition-colors ${activeTab === "overview" ? "text-primary accent-underline" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Overview
-            </button>
-            <button 
-              onClick={() => handleTabClick("analytics")}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Analytics
-            </button>
-            <button 
-              onClick={() => handleTabClick("props")}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Props
-            </button>
-            <button 
-              onClick={() => handleTabClick("games")}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Games
-            </button>
-          </div>
         </div>
       </div>
 
@@ -228,30 +178,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="container py-12">
-        <Card className="bg-card border-border">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-semibold text-foreground mb-3">Ready to analyze?</h3>
-            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-              Start with the Betting Analyzer for comprehensive prop and game line analysis with full transparency.
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Link href="/betting-analyzer">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Betting Analyzer
-                </Button>
-              </Link>
-              <Link href="/ai-assistant">
-                <Button size="lg" variant="outline" className="border-border hover:bg-muted">
-                  AI Assistant
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
